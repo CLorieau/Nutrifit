@@ -1,10 +1,11 @@
 // components/nav.js
 import React from 'react';
-import { View, Text, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import CalendarView from "../screens/calendarview";
 
 const Tab = createBottomTabNavigator();
 
@@ -17,7 +18,6 @@ function Screen({ title }) {
 }
 
 const Dashboard = () => <Screen title="Dashboard" />;
-const Calendar  = () => <Screen title="Calendar" />;
 const Training  = () => <Screen title="Training" />;
 const Diet      = () => <Screen title="Diet" />;
 const Profile   = () => <Screen title="Profile" />;
@@ -27,10 +27,7 @@ function CustomTabBar({ state, descriptors, navigation }) {
     const insets = useSafeAreaInsets();
 
     return (
-        <SafeAreaView
-            edges={['bottom']}
-            style={{ backgroundColor: '#F5F5F7' }}
-        >
+        <SafeAreaView edges={['bottom']} style={{ backgroundColor: '#F5F5F7' }}>
             <View
                 style={{
                     marginHorizontal: 20,
@@ -78,7 +75,6 @@ function CustomTabBar({ state, descriptors, navigation }) {
                             onPress={onPress}
                             activeOpacity={0.9}
                             style={{
-                                // ⬅️ l’onglet actif s’élargit pour donner de la place au label
                                 flex: isFocused ? 1.6 : 1,
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -86,7 +82,6 @@ function CustomTabBar({ state, descriptors, navigation }) {
                                 overflow: 'visible',
                             }}
                         >
-                            {/* Pilule (label) de l’onglet actif */}
                             {isFocused && (
                                 <View
                                     style={{
@@ -114,7 +109,6 @@ function CustomTabBar({ state, descriptors, navigation }) {
                                             fontSize: 14,
                                             textAlign: 'center',
                                         }}
-                                        // ⬇️ pas de troncature : on ajuste la taille si nécessaire
                                         numberOfLines={1}
                                         adjustsFontSizeToFit
                                         minimumFontScale={0.8}
@@ -124,7 +118,6 @@ function CustomTabBar({ state, descriptors, navigation }) {
                                 </View>
                             )}
 
-                            {/* Icône + halo actif */}
                             <View
                                 style={{
                                     width: 54,
@@ -148,7 +141,6 @@ function CustomTabBar({ state, descriptors, navigation }) {
     );
 }
 
-
 export default function Nav() {
     return (
         <NavigationContainer>
@@ -158,7 +150,7 @@ export default function Nav() {
                     headerShown: false,
                     tabBarShowLabel: false,
                 }}
-                sceneContainerStyle={{ backgroundColor: '#F5F5F7' }} // fond de scène clair
+                sceneContainerStyle={{ backgroundColor: '#F5F5F7' }}
                 tabBar={(props) => <CustomTabBar {...props} />}
             >
                 <Tab.Screen
@@ -171,7 +163,7 @@ export default function Nav() {
                 />
                 <Tab.Screen
                     name="Calendar"
-                    component={Calendar}
+                    component={CalendarView}  // ← ICI le vrai screen
                     options={{
                         tabBarIcon: ({ size }) => <Ionicons name="calendar-outline" size={size} />,
                         tabBarLabel: 'Calendar',
