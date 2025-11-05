@@ -6,6 +6,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import CalendarView from "../screens/calendarview";
+import ProfileView from "../screens/profileview";
 
 const Tab = createBottomTabNavigator();
 
@@ -20,7 +21,7 @@ function Screen({ title }) {
 const Dashboard = () => <Screen title="Dashboard" />;
 const Training  = () => <Screen title="Training" />;
 const Diet      = () => <Screen title="Diet" />;
-const Profile   = () => <Screen title="Profile" />;
+/*const Profile   = () => <Screen title="Profile" />;*/
 
 /* --------- Custom Tab Bar --------- */
 function CustomTabBar({ state, descriptors, navigation }) {
@@ -187,7 +188,7 @@ export default function Nav() {
                 />
                 <Tab.Screen
                     name="Profile"
-                    component={Profile}
+                    component={ProfileView}
                     options={{
                         tabBarIcon: ({ size }) => <Ionicons name="person-outline" size={size} />,
                         tabBarLabel: 'Profile',
