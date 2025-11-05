@@ -1,7 +1,6 @@
 // components/nav.js
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -22,7 +21,7 @@ const Training  = () => <Screen title="Training" />;
 const Diet      = () => <Screen title="Diet" />;
 const Profile   = () => <Screen title="Profile" />;
 
-/* --------- Custom Tab Bar --------- */
+//Custom Tab Bar 
 function CustomTabBar({ state, descriptors, navigation }) {
     const insets = useSafeAreaInsets();
 
@@ -143,57 +142,55 @@ function CustomTabBar({ state, descriptors, navigation }) {
 
 export default function Nav() {
     return (
-        <NavigationContainer>
-            <Tab.Navigator
-                initialRouteName="Dashboard"
-                screenOptions={{
-                    headerShown: false,
-                    tabBarShowLabel: false,
+        <Tab.Navigator
+            initialRouteName="Dashboard"
+            screenOptions={{
+                headerShown: false,
+                tabBarShowLabel: false,
+            }}
+            sceneContainerStyle={{ backgroundColor: '#F5F5F7' }}
+            tabBar={(props) => <CustomTabBar {...props} />}
+        >
+            <Tab.Screen
+                name="Dashboard"
+                component={Dashboard}
+                options={{
+                    tabBarIcon: ({ size }) => <Ionicons name="grid-outline" size={size} />,
+                    tabBarLabel: 'Dashboard',
                 }}
-                sceneContainerStyle={{ backgroundColor: '#F5F5F7' }}
-                tabBar={(props) => <CustomTabBar {...props} />}
-            >
-                <Tab.Screen
-                    name="Dashboard"
-                    component={Dashboard}
-                    options={{
-                        tabBarIcon: ({ size }) => <Ionicons name="grid-outline" size={size} />,
-                        tabBarLabel: 'Dashboard',
-                    }}
-                />
-                <Tab.Screen
-                    name="Calendar"
-                    component={CalendarView}  // ← ICI le vrai screen
-                    options={{
-                        tabBarIcon: ({ size }) => <Ionicons name="calendar-outline" size={size} />,
-                        tabBarLabel: 'Calendar',
-                    }}
-                />
-                <Tab.Screen
-                    name="Training"
-                    component={Training}
-                    options={{
-                        tabBarIcon: ({ size }) => <MaterialCommunityIcons name="dumbbell" size={size} />,
-                        tabBarLabel: 'Training',
-                    }}
-                />
-                <Tab.Screen
-                    name="Diet"
-                    component={Diet}
-                    options={{
-                        tabBarIcon: ({ size }) => <MaterialCommunityIcons name="silverware-fork-knife" size={size} />,
-                        tabBarLabel: 'Diet',
-                    }}
-                />
-                <Tab.Screen
-                    name="Profile"
-                    component={Profile}
-                    options={{
-                        tabBarIcon: ({ size }) => <Ionicons name="person-outline" size={size} />,
-                        tabBarLabel: 'Profile',
-                    }}
-                />
-            </Tab.Navigator>
-        </NavigationContainer>
+            />
+            <Tab.Screen
+                name="Calendar"
+                component={CalendarView}
+                options={{
+                    tabBarIcon: ({ size }) => <Ionicons name="calendar-outline" size={size} />,
+                    tabBarLabel: 'Calendar',
+                }}
+            />
+            <Tab.Screen
+                name="Training"
+                component={Training}
+                options={{
+                    tabBarIcon: ({ size }) => <MaterialCommunityIcons name="dumbbell" size={size} />,
+                    tabBarLabel: 'Training',
+                }}
+            />
+            <Tab.Screen
+                name="Diet"
+                component={Diet}
+                options={{
+                    tabBarIcon: ({ size }) => <MaterialCommunityIcons name="silverware-fork-knife" size={size} />,
+                    tabBarLabel: 'Diet',
+                }}
+            />
+            <Tab.Screen
+                name="Profile"
+                component={Profile}
+                options={{
+                    tabBarIcon: ({ size }) => <Ionicons name="person-outline" size={size} />,
+                    tabBarLabel: 'Profile',
+                }}
+            />
+        </Tab.Navigator>
     );
 }
