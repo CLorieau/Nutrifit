@@ -6,7 +6,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 // Import du composant graphique pour créer le cercle de progression
-import { ProgressCircle } from "react-native-svg-charts";
+import * as Progress from "react-native-progress";
 
 // Import du hook "useSafeAreaInsets" pour gérer automatiquement les marges liées aux zones sécurisées (notch, barre de statut…)
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -72,13 +72,15 @@ export default function Profile() {
 
         {/* Cercle de progression avec le nombre de kcal restantes */}
         <View style={styles.progressContainer}>
-          <ProgressCircle
-            style={{ height: 60, width: 60 }}    // Taille du cercle
-            progress={progress}                 // Pourcentage (entre 0 et 1)
-            progressColor={"#A3FF3D"}           // Couleur du cercle vert
-            backgroundColor={"#222"}            // Couleur du fond du cercle
-            strokeWidth={6}                     // Épaisseur du cercle
+          <Progress.Circle
+            size={60}
+            progress={progress}
+            color="#A3FF3D"
+            unfilledColor="#222"
+            borderWidth={0}
+            thickness={6}
           />
+
           <Text style={styles.kcalText}>
             Kcal left{"\n"}
             <Text style={{ fontWeight: "600" }}>{user.caloriesLeft}</Text>
