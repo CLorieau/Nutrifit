@@ -2,11 +2,18 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+
 import CalendarView from "../screens/calendarview";
+import ProfileView from "../screens/profileview";
+import DietView from "../screens/dietview";
+import RecipeDetailView from "../screens/recipeDetailView";
+import TrainingView from "../screens/trainingview";
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 
 function Screen({ title }) {
     return (
@@ -17,9 +24,7 @@ function Screen({ title }) {
 }
 
 const Dashboard = () => <Screen title="Dashboard" />;
-const Training  = () => <Screen title="Training" />;
-const Diet      = () => <Screen title="Diet" />;
-const Profile   = () => <Screen title="Profile" />;
+//const Training  = () => <Screen title="Training" />;
 
 //Custom Tab Bar 
 function CustomTabBar({ state, descriptors, navigation }) {
@@ -137,6 +142,16 @@ function CustomTabBar({ state, descriptors, navigation }) {
                 })}
             </View>
         </SafeAreaView>
+    );
+}
+
+/* --------- Diet stack (Home + Detail) --------- */
+function DietStack() {
+    return (
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="DietHome" component={DietView} />
+            <Stack.Screen name="RecipeDetail" component={RecipeDetailView} />
+        </Stack.Navigator>
     );
 }
 
