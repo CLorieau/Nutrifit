@@ -7,6 +7,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import CalendarView from "../screens/calendarview";
 import ProfileView from "../screens/profileview";
+import TrainingView from "../screens/trainingview";
 
 const Tab = createBottomTabNavigator();
 
@@ -19,7 +20,7 @@ function Screen({ title }) {
 }
 
 const Dashboard = () => <Screen title="Dashboard" />;
-const Training  = () => <Screen title="Training" />;
+//const Training  = () => <Screen title="Training" />;
 const Diet      = () => <Screen title="Diet" />;
 /*const Profile   = () => <Screen title="Profile" />;*/
 
@@ -172,7 +173,7 @@ export default function Nav() {
                 />
                 <Tab.Screen
                     name="Training"
-                    component={Training}
+                    component={TrainingView}  // ← ICI le vrai screen
                     options={{
                         tabBarIcon: ({ size }) => <MaterialCommunityIcons name="dumbbell" size={size} />,
                         tabBarLabel: 'Training',
