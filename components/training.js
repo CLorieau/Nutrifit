@@ -10,15 +10,19 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Progress from "react-native-progress";
+import { useNavigation } from "@react-navigation/native"; // ✅ pour naviguer
 
 export default function Training() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation(); // ✅ accès à la navigation
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const workoutDone = 1;
   const workoutTotal = 2;
   const workoutRatio = workoutDone / workoutTotal;
 
+  // --- Animation de la barre de progression ---
   useEffect(() => {
     let interval;
     if (isPlaying) {
@@ -34,17 +38,14 @@ export default function Training() {
     return () => clearInterval(interval);
   }, [isPlaying]);
 
+  // --- Gestion des boutons Play/Pause/Restart ---
   const handlePress = () => {
-    if (progress >= 1) {
-      setProgress(0);
-      setIsPlaying(false);
-    } else {
-      setIsPlaying((prev) => !prev);
-    }
+    // 👉 quand on clique sur play/pause, on va à TrainingDetail
+    navigation.navigate("TrainingDetail");
   };
 
   const getIconName = () => {
-    if (progress >= 1) return "refresh-circle"; // flèche épaisse (remplace "refresh")
+    if (progress >= 1) return "refresh-circle"; // flèche épaisse
     return isPlaying ? "pause" : "play";
   };
 
@@ -91,7 +92,7 @@ export default function Training() {
         </TouchableOpacity>
       </View>
 
-      {/* --- MAIN CARD --- */}
+      {/* --- CARTE PRINCIPALE --- */}
       <View style={styles.mainCard}>
         <Image
           source={{
@@ -112,7 +113,7 @@ export default function Training() {
               <Text style={styles.cardSubtitle}>Body Weight</Text>
             </View>
 
-            {/* Cercle du nombre de workouts */}
+            {/* Cercle Workout */}
             <View style={styles.circleWrapper}>
               <Progress.Circle
                 size={70}
@@ -131,7 +132,7 @@ export default function Training() {
             </View>
           </View>
 
-          {/* Ligne Play + Temps alignés */}
+          {/* Ligne Play + Temps alignée */}
           <View
             style={{
               flexDirection: "row",
@@ -168,26 +169,31 @@ export default function Training() {
         </View>
       </View>
 
-      {/* --- RECOMMENDATIONS --- */}
+      {/* --- RECOMMANDATIONS --- */}
       <Text style={styles.sectionTitle}>Recommendation</Text>
 
       <FlatList
         data={recommendations}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.exerciseCard}>
-            <Image source={{ uri: item.image }} style={styles.exerciseImage} />
-            <View style={styles.exerciseInfo}>
-              <Text style={styles.exerciseTitle}>{item.title}</Text>
-              <Text style={styles.exerciseMeta}>
-                {item.time} | {item.calories} kcal
-              </Text>
-              <Text style={styles.exerciseMeta}>Calories Burned</Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("TrainingDetail")} // ✅ clic sur un exercice
+            activeOpacity={0.8}
+          >
+            <View style={styles.exerciseCard}>
+              <Image source={{ uri: item.image }} style={styles.exerciseImage} />
+              <View style={styles.exerciseInfo}>
+                <Text style={styles.exerciseTitle}>{item.title}</Text>
+                <Text style={styles.exerciseMeta}>
+                  {item.time} | {item.calories} kcal
+                </Text>
+                <Text style={styles.exerciseMeta}>Calories Burned</Text>
+              </View>
+              <View style={styles.tag}>
+                <Text style={styles.tagText}>{item.type}</Text>
+              </View>
             </View>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>{item.type}</Text>
-            </View>
-          </View>
+          </TouchableOpacity>
         )}
       />
     </View>

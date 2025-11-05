@@ -1,17 +1,18 @@
 // components/nav.js
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, Text, TouchableOpacity }     from 'react-native';
+import { NavigationContainer }              from '@react-navigation/native';
+import { createBottomTabNavigator }         from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator }       from '@react-navigation/native-stack';
+import { SafeAreaView, useSafeAreaInsets }  from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-import CalendarView from "../screens/calendarview";
-import ProfileView from "../screens/profileview";
-import DietView from "../screens/dietview";
-import RecipeDetailView from "../screens/recipeDetailView";
-import TrainingView from "../screens/trainingview";
+import CalendarView         from "../screens/calendarview";
+import ProfileView          from "../screens/profileview";
+import DietView             from "../screens/dietview";
+import RecipeDetailView     from "../screens/recipeDetailView";
+import TrainingView         from "../screens/trainingview";
+import TrainingDetailView   from "../screens/trainingDetailView"
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -25,7 +26,6 @@ function Screen({ title }) {
 }
 
 const Dashboard = () => <Screen title="Dashboard" />;
-//const Training  = () => <Screen title="Training" />;
 
 /* --------- Custom Tab Bar --------- */
 function CustomTabBar({ state, descriptors, navigation }) {
@@ -156,6 +156,16 @@ function DietStack() {
     );
 }
 
+/* --------- Training stack (Home + Detail) --------- */
+function TrainingStack() {
+    return (
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="TrainingHome" component={TrainingView} />
+            <Stack.Screen name="TrainingDetail" component={TrainingDetailView} />
+        </Stack.Navigator>
+    );
+}
+
 export default function Nav() {
     return (
         <NavigationContainer>
@@ -186,9 +196,9 @@ export default function Nav() {
                 />
                 <Tab.Screen
                     name="Training"
-                    component={TrainingView}  // ← ICI le vrai screen
+                    component={TrainingStack} 
                     options={{
-                        tabBarIcon: ({ size }) => <MaterialCommunityIcons name="dumbbell" size={size} />,
+                        tabBarIcon: ({ size }) => (<MaterialCommunityIcons name="dumbbell" size={size} />),
                         tabBarLabel: 'Training',
                     }}
                 />
