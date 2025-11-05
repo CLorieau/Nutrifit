@@ -24,7 +24,6 @@ function Screen({ title }) {
 }
 
 const Dashboard = () => <Screen title="Dashboard" />;
-//const Training  = () => <Screen title="Training" />;
 
 //Custom Tab Bar 
 function CustomTabBar({ state, descriptors, navigation }) {
@@ -184,7 +183,7 @@ export default function Nav() {
             />
             <Tab.Screen
                 name="Training"
-                component={Training}
+                component={TrainingView}
                 options={{
                     tabBarIcon: ({ size }) => <MaterialCommunityIcons name="dumbbell" size={size} />,
                     tabBarLabel: 'Training',
@@ -192,7 +191,7 @@ export default function Nav() {
             />
             <Tab.Screen
                 name="Diet"
-                component={Diet}
+                component={DietStack}
                 options={{
                     tabBarIcon: ({ size }) => <MaterialCommunityIcons name="silverware-fork-knife" size={size} />,
                     tabBarLabel: 'Diet',
@@ -200,7 +199,7 @@ export default function Nav() {
             />
             <Tab.Screen
                 name="Profile"
-                component={Profile}
+                component={ProfileView}
                 options={{
                     tabBarIcon: ({ size }) => <Ionicons name="person-outline" size={size} />,
                     tabBarLabel: 'Profile',

@@ -6,6 +6,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SignUpScreenView from './screens/SignUpScreenView';
 import navview from './screens/navview';
+import TrainingView from './screens/trainingview';
 enableScreens();
 
 const Stack = createNativeStackNavigator();
@@ -17,6 +18,7 @@ export default function App() {
         <Stack.Screen name="Welcome" component={WelcomeScreenView} />
         <Stack.Screen name="SignUp" component={SignUpScreenView} />
         <Stack.Screen name="Nav" component={navview} />
+        <Stack.Screen name="Training" component={TrainingView} />
 
       </Stack.Navigator>
     </NavigationContainer>
