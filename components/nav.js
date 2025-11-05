@@ -27,7 +27,7 @@ function Screen({ title }) {
 
 const Dashboard = () => <Screen title="Dashboard" />;
 
-/* --------- Custom Tab Bar --------- */
+//Custom Tab Bar 
 function CustomTabBar({ state, descriptors, navigation }) {
     const insets = useSafeAreaInsets();
 
@@ -168,60 +168,55 @@ function TrainingStack() {
 
 export default function Nav() {
     return (
-        <NavigationContainer>
-            <Tab.Navigator
-                initialRouteName="Dashboard"
-                screenOptions={{
-                    headerShown: false,
-                    tabBarShowLabel: false,
+        <Tab.Navigator
+            initialRouteName="Dashboard"
+            screenOptions={{
+                headerShown: false,
+                tabBarShowLabel: false,
+            }}
+            sceneContainerStyle={{ backgroundColor: '#F5F5F7' }}
+            tabBar={(props) => <CustomTabBar {...props} />}
+        >
+            <Tab.Screen
+                name="Dashboard"
+                component={Dashboard}
+                options={{
+                    tabBarIcon: ({ size }) => <Ionicons name="grid-outline" size={size} />,
+                    tabBarLabel: 'Dashboard',
                 }}
-                sceneContainerStyle={{ backgroundColor: '#F5F5F7' }}
-                tabBar={(props) => <CustomTabBar {...props} />}
-            >
-                <Tab.Screen
-                    name="Dashboard"
-                    component={Dashboard}
-                    options={{
-                        tabBarIcon: ({ size }) => <Ionicons name="grid-outline" size={size} />,
-                        tabBarLabel: 'Dashboard',
-                    }}
-                />
-                <Tab.Screen
-                    name="Calendar"
-                    component={CalendarView}
-                    options={{
-                        tabBarIcon: ({ size }) => <Ionicons name="calendar-outline" size={size} />,
-                        tabBarLabel: 'Calendar',
-                    }}
-                />
-                <Tab.Screen
+            />
+            <Tab.Screen
+                name="Calendar"
+                component={CalendarView}
+                options={{
+                    tabBarIcon: ({ size }) => <Ionicons name="calendar-outline" size={size} />,
+                    tabBarLabel: 'Calendar',
+                }}
+            />
+            <Tab.Screen
                     name="Training"
                     component={TrainingStack} 
                     options={{
                         tabBarIcon: ({ size }) => (<MaterialCommunityIcons name="dumbbell" size={size} />),
                         tabBarLabel: 'Training',
                     }}
-                />
-                {/* ✅ Utiliser UNIQUEMENT la stack pour Diet */}
-                <Tab.Screen
-                    name="Diet"
-                    component={DietStack}
-                    options={{
-                        tabBarIcon: ({ size }) => (
-                            <MaterialCommunityIcons name="silverware-fork-knife" size={size} />
-                        ),
-                        tabBarLabel: 'Diet',
-                    }}
-                />
-                <Tab.Screen
-                    name="Profile"
-                    component={ProfileView}
-                    options={{
-                        tabBarIcon: ({ size }) => <Ionicons name="person-outline" size={size} />,
-                        tabBarLabel: 'Profile',
-                    }}
-                />
-            </Tab.Navigator>
-        </NavigationContainer>
+            />
+            <Tab.Screen
+                name="Diet"
+                component={DietStack}
+                options={{
+                    tabBarIcon: ({ size }) => <MaterialCommunityIcons name="silverware-fork-knife" size={size} />,
+                    tabBarLabel: 'Diet',
+                }}
+            />
+            <Tab.Screen
+                name="Profile"
+                component={ProfileView}
+                options={{
+                    tabBarIcon: ({ size }) => <Ionicons name="person-outline" size={size} />,
+                    tabBarLabel: 'Profile',
+                }}
+            />
+        </Tab.Navigator>
     );
 }
