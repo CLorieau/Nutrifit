@@ -1,7 +1,32 @@
-import React from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ImageBackground } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ImageBackground, Alert } from 'react-native';
 
 export default function SignUpScreen({ navigation }) {
+  const [fullName, setFullName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleSignUp = () => {
+    if (!fullName || !lastName || !email || !password) {
+      Alert.alert("Erreur", "Veuillez remplir tous les champs.");
+      return;
+    }
+
+    const emailRegex = /\S+@\S+\.\S+/;
+    if (!emailRegex.test(email)) {
+      Alert.alert("Erreur", "Veuillez entrer un email valide.");
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert("Erreur", "Le mot de passe doit contenir au moins 6 caractères.");
+      return;
+    }
+
+    navigation.navigate('Nav');
+  };
+
   return (
     <ImageBackground
       source={require('../assets/welcome_page_pic.jpg')}
@@ -10,19 +35,49 @@ export default function SignUpScreen({ navigation }) {
     >
       <View style={styles.overlay}>
         <Text style={styles.title}>Sign Up</Text>
+
         <View style={styles.form}>
-        {/* Champs du formulaire */}
-        <TextInput style={styles.input} placeholder="Full Name" placeholderTextColor="#aaa" />
-        <TextInput style={styles.input} placeholder="Last Name" placeholderTextColor="#aaa" />
-        <TextInput style={styles.input} placeholder="Email" placeholderTextColor="#aaa" keyboardType="email-address" />
-        <TextInput style={styles.input} placeholder="Password" placeholderTextColor="#aaa" secureTextEntry />
-                <Text style={styles.pswrd} onPress={() => navigation.goBack()}>
+          <TextInput
+            style={styles.input}
+            placeholder="Full Name"
+            placeholderTextColor="#aaa"
+            value={fullName}
+            onChangeText={setFullName}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Last Name"
+            placeholderTextColor="#aaa"
+            value={lastName}
+            onChangeText={setLastName}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="#aaa"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            placeholderTextColor="#aaa"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+          />
+
+          <Text style={styles.pswrd} onPress={() => navigation.goBack()}>
             Forget Password?
           </Text>
         </View>
-        {/* Bouton d'inscription */}
-        <TouchableOpacity style={styles.button}  onPress={() => navigation.navigate('Nav')}>
-          <Text style={styles.buttonText} >Sign Up</Text>
+
+        <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+          <Text style={styles.buttonText}>Sign Up</Text>
         </TouchableOpacity>
 
         <Text style={styles.footer}>
@@ -30,7 +85,6 @@ export default function SignUpScreen({ navigation }) {
           <Text style={styles.login} onPress={() => navigation.goBack()}>
             Login
           </Text>
-
         </Text>
       </View>
     </ImageBackground>
@@ -59,7 +113,7 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: 'rgba(255,255,255,0.2)',
     color: 'white',
-    borderRadius:12 ,
+    borderRadius: 12,
     padding: 12,
     marginBottom: 15,
   },
@@ -85,15 +139,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   form: {
-display: 'flex',
-flexDirection: 'column',
-gap: 30,
-  marginTop:40,
-},
-pswrd:{
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 30,
+    marginTop: 40,
+  },
+  pswrd: {
     color: 'white',
     fontWeight: 'bold',
     textAlign: 'right',
     marginTop: -35,
-},
+  },
 });
