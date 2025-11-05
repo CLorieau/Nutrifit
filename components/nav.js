@@ -3,12 +3,17 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+
 import CalendarView from "../screens/calendarview";
 import ProfileView from "../screens/profileview";
+import DietView from "../screens/dietview";
+import RecipeDetailView from "../screens/recipeDetailView";
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 
 function Screen({ title }) {
     return (
@@ -20,8 +25,6 @@ function Screen({ title }) {
 
 const Dashboard = () => <Screen title="Dashboard" />;
 const Training  = () => <Screen title="Training" />;
-const Diet      = () => <Screen title="Diet" />;
-/*const Profile   = () => <Screen title="Profile" />;*/
 
 /* --------- Custom Tab Bar --------- */
 function CustomTabBar({ state, descriptors, navigation }) {
@@ -142,6 +145,16 @@ function CustomTabBar({ state, descriptors, navigation }) {
     );
 }
 
+/* --------- Diet stack (Home + Detail) --------- */
+function DietStack() {
+    return (
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="DietHome" component={DietView} />
+            <Stack.Screen name="RecipeDetail" component={RecipeDetailView} />
+        </Stack.Navigator>
+    );
+}
+
 export default function Nav() {
     return (
         <NavigationContainer>
@@ -164,7 +177,7 @@ export default function Nav() {
                 />
                 <Tab.Screen
                     name="Calendar"
-                    component={CalendarView}  // ← ICI le vrai screen
+                    component={CalendarView}
                     options={{
                         tabBarIcon: ({ size }) => <Ionicons name="calendar-outline" size={size} />,
                         tabBarLabel: 'Calendar',
@@ -178,11 +191,14 @@ export default function Nav() {
                         tabBarLabel: 'Training',
                     }}
                 />
+                {/* ✅ Utiliser UNIQUEMENT la stack pour Diet */}
                 <Tab.Screen
                     name="Diet"
-                    component={Diet}
+                    component={DietStack}
                     options={{
-                        tabBarIcon: ({ size }) => <MaterialCommunityIcons name="silverware-fork-knife" size={size} />,
+                        tabBarIcon: ({ size }) => (
+                            <MaterialCommunityIcons name="silverware-fork-knife" size={size} />
+                        ),
                         tabBarLabel: 'Diet',
                     }}
                 />
