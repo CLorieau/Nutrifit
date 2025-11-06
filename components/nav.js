@@ -12,7 +12,8 @@ import ProfileView          from "../screens/profileview";
 import DietView             from "../screens/dietview";
 import RecipeDetailView     from "../screens/recipeDetailView";
 import TrainingView         from "../screens/trainingview";
-import TrainingDetailView   from "../screens/trainingDetailView"
+import TrainingDetailView   from "../screens/trainingDetailView";
+import DashboardView       from "../screens/dashboardView";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -24,8 +25,6 @@ function Screen({ title }) {
         </View>
     );
 }
-
-const Dashboard = () => <Screen title="Dashboard" />;
 
 //Custom Tab Bar 
 function CustomTabBar({ state, descriptors, navigation }) {
@@ -146,6 +145,18 @@ function CustomTabBar({ state, descriptors, navigation }) {
     );
 }
 
+/* --------- Dashboard stack (Dashboard + détails) --------- */
+function DashboardStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="DashboardHome" component={DashboardView} />
+      <Stack.Screen name="TrainingDetail" component={TrainingDetailView} />
+      <Stack.Screen name="RecipeDetail" component={RecipeDetailView} />
+    </Stack.Navigator>
+  );
+}
+
+
 /* --------- Diet stack (Home + Detail) --------- */
 function DietStack() {
     return (
@@ -179,7 +190,7 @@ export default function Nav() {
         >
             <Tab.Screen
                 name="Dashboard"
-                component={Dashboard}
+                component={DashboardStack}
                 options={{
                     tabBarIcon: ({ size }) => <Ionicons name="grid-outline" size={size} />,
                     tabBarLabel: 'Dashboard',
