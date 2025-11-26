@@ -26,7 +26,10 @@ export default function WelcomeScreen() {
                     <Text style={styles.buttonText}>Sign Up</Text>
                     </TouchableOpacity>
                     <Text style={styles.footer}>
-                        Already have an account? <Text style={styles.login}>login</Text>
+                        Already have an account? <Text style={styles.login} onPress={() => navigation.navigate('Login')}>
+  Login
+</Text>
+
                     </Text>
                 </View>
             </View>

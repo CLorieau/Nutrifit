@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ImageBackground, Alert } from 'react-native';
 
-export default function SignUpScreen({ navigation }) {
-  const [fullName, setFullName] = useState("");
-  const [lastName, setLastName] = useState("");
+export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSignUp = () => {
-    if (!fullName || !lastName || !email || !password) {
+  const handleLogin = () => {
+    if (!email || !password) {
       Alert.alert("Erreur", "Veuillez remplir tous les champs.");
       return;
     }
@@ -24,7 +22,7 @@ export default function SignUpScreen({ navigation }) {
       return;
     }
 
-    navigation.navigate('Start');
+    navigation.navigate('Nav'); // page après login (dashboard)
   };
 
   return (
@@ -34,24 +32,9 @@ export default function SignUpScreen({ navigation }) {
       resizeMode="cover"
     >
       <View style={styles.overlay}>
-        <Text style={styles.title}>Sign Up</Text>
+        <Text style={styles.title}>Login</Text>
 
         <View style={styles.form}>
-          <TextInput
-            style={styles.input}
-            placeholder="Full Name"
-            placeholderTextColor="#aaa"
-            value={fullName}
-            onChangeText={setFullName}
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="Last Name"
-            placeholderTextColor="#aaa"
-            value={lastName}
-            onChangeText={setLastName}
-          />
 
           <TextInput
             style={styles.input}
@@ -71,19 +54,19 @@ export default function SignUpScreen({ navigation }) {
             onChangeText={setPassword}
           />
 
-          <Text style={styles.pswrd} onPress={() => navigation.goBack()}>
-            Forget Password?
+          <Text style={styles.pswrd}>
+            Forgot Password?
           </Text>
         </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-          <Text style={styles.buttonText}>Sign Up</Text>
+        <TouchableOpacity style={styles.button} onPress={handleLogin}>
+          <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
 
         <Text style={styles.footer}>
-          Already have an account?{' '}
-          <Text style={styles.login} onPress={() => navigation.goBack()}>
-            Login
+          Don’t have an account?{' '}
+          <Text style={styles.login} onPress={() => navigation.navigate('SignUp')}>
+            Sign Up
           </Text>
         </Text>
       </View>
@@ -100,8 +83,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.25)',
     padding: 30,
     borderTopLeftRadius: 100,
-    height: '78%',
-    marginTop: 200,
+    height: '70%',
+    marginTop: 230,
   },
   title: {
     fontSize: 28,
@@ -122,7 +105,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 80,
     alignItems: 'center',
-    marginTop: 88,
+    marginTop: 60,
   },
   buttonText: {
     color: 'white',
@@ -148,6 +131,5 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     textAlign: 'right',
-    marginTop: -35,
   },
 });
