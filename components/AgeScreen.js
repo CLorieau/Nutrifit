@@ -85,7 +85,7 @@ export default function AgeScreen({ navigation }) {
         {/* Continue */}
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate("NextStep")}
+          onPress={() => navigation.navigate("Nav")}
         >
           <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
