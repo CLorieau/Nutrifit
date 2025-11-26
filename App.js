@@ -11,6 +11,9 @@ import StartScreen from './screens/StartScreenView';
 import GenderScreenView from './screens/GenderScreenView';
 import AgeScreenView from './screens/AgeScreenView';
 import LoginScreenView from './screens/LoginScreenView';
+import WeightScreenView from './screens/WeightScreenView';
+import HeightScreenView from './screens/HeightScreenView';
+
 enableScreens();
 
 const Stack = createNativeStackNavigator();
@@ -27,6 +30,8 @@ export default function App() {
         <Stack.Screen name="Start" component={StartScreen} />
         <Stack.Screen name="Gender" component={GenderScreenView} />
         <Stack.Screen name="Age" component={AgeScreenView} />
+        <Stack.Screen name="Weight" component={WeightScreenView} />
+        <Stack.Screen name="Height" component={HeightScreenView} />
 
 
       </Stack.Navigator>
