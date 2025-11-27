@@ -1,25 +1,18 @@
-import React, { useState } from "react";
+import React, { useRef } from "react";
 import {
   View,
   Text,
   StyleSheet,
+  Animated,
   ImageBackground,
   TouchableOpacity,
-  FlatList,
 } from "react-native";
 
 export default function AgeScreen({ navigation }) {
   const ages = Array.from({ length: 60 }, (_, i) => i + 12);
-  const ITEM_HEIGHT = 40;
-  const VISIBLE_ITEMS = 5;
+  const ITEM_HEIGHT = 50;
 
-  const [selectedIndex, setSelectedIndex] = useState(10);
-
-  const handleScroll = (e) => {
-    const offsetY = e.nativeEvent.contentOffset.y;
-    const centerIndex = Math.round(offsetY / ITEM_HEIGHT);
-    setSelectedIndex(centerIndex);
-  };
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   return (
     <ImageBackground
@@ -27,45 +20,76 @@ export default function AgeScreen({ navigation }) {
       style={styles.background}
     >
       <View style={styles.container}>
+
         <Text style={styles.title}>How old are you ?</Text>
 
-        <FlatList
-          data={ages}
-          keyExtractor={(item) => item.toString()}
-          style={{ height: ITEM_HEIGHT * VISIBLE_ITEMS }}
-          contentContainerStyle={{
-            paddingVertical: (ITEM_HEIGHT * (VISIBLE_ITEMS - 1)) / 2,
-          }}
-          showsVerticalScrollIndicator={false}
-          snapToInterval={ITEM_HEIGHT}
-          decelerationRate="fast"
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-          initialScrollIndex={selectedIndex}
-          getItemLayout={(_, index) => ({
-            length: ITEM_HEIGHT,
-            offset: ITEM_HEIGHT * index,
-            index,
-          })}
-          renderItem={({ item, index }) => {
-            const isSelected = index === selectedIndex;
+        {/* Picker container */}
+        <View style={styles.pickerBox}>
 
-            return (
-              <View style={styles.itemContainer}>
-                <Text style={[styles.age, isSelected && styles.selectedAge]}>
-                  {item}
-                </Text>
-              </View>
-            );
-          }}
-        />
+          {/* Dégradé haut */}
+          <View pointerEvents="none" style={styles.fadeTop} />
 
+          {/* Liste scrollable */}
+          <Animated.FlatList
+            data={ages}
+            keyExtractor={(item) => item.toString()}
+            showsVerticalScrollIndicator={false}
+            snapToInterval={ITEM_HEIGHT}
+            decelerationRate="fast"
+            bounces={false}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+              { useNativeDriver: false }
+            )}
+            renderItem={({ item, index }) => {
+              const inputRange = [
+                (index - 2) * ITEM_HEIGHT,
+                (index - 1) * ITEM_HEIGHT,
+                index * ITEM_HEIGHT,
+                (index + 1) * ITEM_HEIGHT,
+                (index + 2) * ITEM_HEIGHT,
+              ];
+
+              const opacity = scrollY.interpolate({
+                inputRange,
+                outputRange: [0.2, 0.5, 1, 0.5, 0.2],
+                extrapolate: "clamp",
+              });
+
+              const scale = scrollY.interpolate({
+                inputRange,
+                outputRange: [0.8, 0.9, 1.3, 0.9, 0.8],
+                extrapolate: "clamp",
+              });
+
+              return (
+                <View style={styles.itemContainer}>
+                  <Animated.Text
+                    style={[
+                      styles.age,
+                      { opacity, transform: [{ scale }] }
+                    ]}
+                  >
+                    {item}
+                  </Animated.Text>
+                </View>
+              );
+            }}
+          />
+
+          {/* Dégradé bas */}
+          <View pointerEvents="none" style={styles.fadeBottom} />
+
+        </View>
+
+        {/* Continue */}
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate("Weight")}
+          onPress={() => navigation.navigate("Nav")}
         >
           <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
+
       </View>
     </ImageBackground>
   );
@@ -73,41 +97,56 @@ export default function AgeScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   background: { flex: 1, justifyContent: "center" },
-  container: { alignItems: "center" },
-
+  container: { alignItems: "center", marginTop: -40 },
   title: {
     color: "white",
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: "bold",
-    marginBottom: 30,
+    marginBottom: 40,
+  },
+
+  pickerBox: {
+    height: 200,
+    width: 200,
+    overflow: "hidden",
   },
 
   itemContainer: {
-    height: 40,
+    height: 50,
     justifyContent: "center",
     alignItems: "center",
   },
+
   age: {
-    fontSize: 22,
-    color: "rgba(255,255,255,0.5)",
-  },
-  selectedAge: {
-    fontSize: 28,
+    fontSize: 26,
     color: "white",
-    fontWeight: "bold",
+  },
+
+  fadeTop: {
+    position: "absolute",
+    top: 0,
+    height: 50,
+    width: "100%",
+    backgroundColor: "rgba(0,0,0,0.6)",
+    zIndex: 10,
+  },
+
+  fadeBottom: {
+    position: "absolute",
+    bottom: 0,
+    height: 50,
+    width: "100%",
+    backgroundColor: "rgba(0,0,0,0.6)",
+    zIndex: 10,
   },
 
   button: {
     backgroundColor: "white",
     paddingVertical: 12,
-    paddingHorizontal: 40,
+    paddingHorizontal: 50,
     borderRadius: 12,
-    marginTop: 30,
-    top: 160,
+    marginTop: 40,
   },
 
-  buttonText: {
-    fontWeight: "bold",
-    fontSize: 16,
-  },
+  buttonText: { fontWeight: "bold", fontSize: 16 },
 });
