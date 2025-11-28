@@ -10,8 +10,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 
-import { login } from '../api/auth';        // 🔗 Appel à POST /login
-import { AuthContext } from '../App';       // 🔐 Contexte d'authentification
+import { login } from '../api/auth';
+import AuthContext from "../AuthContext";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
