@@ -26,7 +26,7 @@ enableScreens();
 const Stack = createNativeStackNavigator();
 
 // 🔐 Contexte global d'authentification
-export const AuthContext = createContext(null);
+import AuthContext from "./AuthContext";
 
 export default function App() {
     const [token, setToken] = useState(null);
