@@ -11,9 +11,6 @@ import * as Progress from "react-native-progress";
 // Import du hook "useSafeAreaInsets"
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-// Import de ka méthode d’appel API pour récupérer les données du profil
-import { getProfile } from "../api/profileAPI";
-
 // 🔥 AJOUT : Import du AuthContext pour accéder à signOut()
 import AuthContext from "../AuthContext";
 
