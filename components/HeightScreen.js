@@ -71,7 +71,11 @@ export default function HeightScreen({ navigation }) {
         {/* Bouton Continue */}
         <TouchableOpacity
           style={styles.button}
+<<<<<<< HEAD
           onPress={() => navigation.navigate("Weight")}
+=======
+          onPress={() => navigation.navigate("Nav")}
+>>>>>>> 347bde49dfb02e1f6cbc661f32cbd44f6bdc95f6
         >
           <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>

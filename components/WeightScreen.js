@@ -68,7 +68,11 @@ export default function WeightScreen({ navigation }) {
         {/* Continue */}
         <TouchableOpacity
           style={styles.button}
+<<<<<<< HEAD
           onPress={() => navigation.navigate("Diet")}
+=======
+          onPress={() => navigation.navigate("Height")}
+>>>>>>> 347bde49dfb02e1f6cbc661f32cbd44f6bdc95f6
         >
           <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
