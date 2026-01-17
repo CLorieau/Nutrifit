@@ -1,3 +1,3 @@
 import api from "./axiosInstance";
 
-export const getProfile = () => api.get("/profile");
+export const getProfile = () => api.get("/users/me");
