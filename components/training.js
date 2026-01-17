@@ -97,9 +97,7 @@ export default function Training() {
       {/* --- CARTE PRINCIPALE --- */}
       <View style={styles.mainCard}>
         <Image
-          source={{
-            uri: "https://images.unsplash.com/photo-1594737625785-cbdb6993a47e?q=80&w=800",
-          }}
+          source={require("../assets/welcome_page_pic.jpg")}
           style={styles.cardImage}
         />
         <View style={styles.overlay}>
@@ -183,7 +181,10 @@ export default function Training() {
             activeOpacity={0.8}
           >
             <View style={styles.exerciseCard}>
-              <Image source={{ uri: item.image }} style={styles.exerciseImage} />
+              <Image
+                source={{ uri: item.image }}
+                style={styles.exerciseImage}
+              />
               <View style={styles.exerciseInfo}>
                 <Text style={styles.exerciseTitle}>{item.title}</Text>
                 <Text style={styles.exerciseMeta}>

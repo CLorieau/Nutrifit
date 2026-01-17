@@ -64,9 +64,7 @@ export default function Dashboard({ navigation }) {
       {/* CARD 1 — TRAINING */}
       <View style={styles.trainingCard}>
         <Image
-          source={{
-            uri: "https://images.unsplash.com/photo-1594737625785-cbdb6993a47e?q=80&w=800",
-          }}
+          source={require("../assets/welcome_page_pic.jpg")}
           style={styles.trainingImage}
         />
         <View style={styles.overlay}>
