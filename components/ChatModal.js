@@ -107,7 +107,7 @@ export default function ChatModal() {
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.6)',
+        backgroundColor: 'transparent',
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 20,
