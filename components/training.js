@@ -11,10 +11,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Progress from "react-native-progress";
 import { useNavigation } from "@react-navigation/native"; // ✅ pour naviguer
+import { useChat } from "../ChatContext";
 
 export default function Training() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation(); // ✅ accès à la navigation
+  const { openChat } = useChat();
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -87,7 +89,7 @@ export default function Training() {
           <Text style={styles.title}>Today's activities :</Text>
           <Text style={styles.subtitle}>Body Weight</Text>
         </View>
-        <TouchableOpacity style={styles.addButton}>
+        <TouchableOpacity style={styles.addButton} onPress={openChat}>
           <Ionicons name="add" size={28} color="#000" />
         </TouchableOpacity>
       </View>

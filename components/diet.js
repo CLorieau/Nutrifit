@@ -85,8 +85,11 @@ const MOCK_FOR_YOU = [
     },
 ];
 
+import { useChat } from "../ChatContext";
+
 export default function Diet({ navigation }) {
     const insets = useSafeAreaInsets();
+    const { openChat } = useChat();
 
     // ————— ÉTATS
     const [query, setQuery] = useState('');
@@ -278,7 +281,7 @@ export default function Diet({ navigation }) {
                 </View>
 
                 <Pressable
-                    onPress={onAdd}
+                    onPress={openChat}
                     style={{
                         width: 48,
                         height: 48,

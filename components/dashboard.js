@@ -10,7 +10,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import * as Progress from "react-native-progress";
 
+import { useChat } from "../ChatContext";
+
 export default function Dashboard({ navigation }) {
+  const { openChat } = useChat();
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
 
@@ -53,7 +56,7 @@ export default function Dashboard({ navigation }) {
       {/* HEADER */}
       <View style={styles.header}>
         <Text style={styles.logo}>Logo</Text>
-        <TouchableOpacity style={styles.addButton}>
+        <TouchableOpacity style={styles.addButton} onPress={openChat}>
           <Ionicons name="add" size={26} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -172,8 +175,8 @@ export default function Dashboard({ navigation }) {
                   index === 0
                     ? "https://images.unsplash.com/photo-1528698827591-e19ccd7bc23d?q=80&w=1200"
                     : index === 1
-                    ? "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=1200"
-                    : "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200",
+                      ? "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=1200"
+                      : "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200",
               }}
               style={styles.mealImage}
             />
@@ -184,8 +187,8 @@ export default function Dashboard({ navigation }) {
                   {index === 0
                     ? "15:00 min • 650 kcal"
                     : index === 1
-                    ? "01:15 hr • 1650 kcal"
-                    : "30 min • 900 kcal"}
+                      ? "01:15 hr • 1650 kcal"
+                      : "30 min • 900 kcal"}
                 </Text>
               </View>
               <Ionicons name="search" size={22} color="#fff" />
