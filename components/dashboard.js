@@ -10,7 +10,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import * as Progress from "react-native-progress";
 
+import { useChat } from "../ChatContext";
+
 export default function Dashboard({ navigation }) {
+  const { openChat } = useChat();
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
 
@@ -53,7 +56,7 @@ export default function Dashboard({ navigation }) {
       {/* HEADER */}
       <View style={styles.header}>
         <Image source={require("../assets/logo.png")} style={styles.logo} />
-        <TouchableOpacity style={styles.addButton}>
+        <TouchableOpacity style={styles.addButton} onPress={openChat}>
           <Ionicons name="add" size={26} color="#fff" />
         </TouchableOpacity>
       </View>
