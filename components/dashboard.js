@@ -55,7 +55,7 @@ export default function Dashboard({ navigation }) {
     >
       {/* HEADER */}
       <View style={styles.header}>
-        <Image source={require("../assets/logo.png")} style={styles.logo} />
+        <Text style={styles.logo}>Logo</Text>
         <TouchableOpacity style={styles.addButton} onPress={openChat}>
           <Ionicons name="add" size={26} color="#fff" />
         </TouchableOpacity>
@@ -77,10 +77,7 @@ export default function Dashboard({ navigation }) {
           {/* INFOS + PLAY + BARRE */}
           <View style={styles.infoContainer}>
             {/* Bouton Play/Pause/Retry */}
-            <TouchableOpacity
-              onPress={handlePlayPause}
-              style={styles.playButton}
-            >
+            <TouchableOpacity onPress={handlePlayPause} style={styles.playButton}>
               {progress >= 1 ? (
                 <Ionicons name="refresh" size={24} color="#fff" />
               ) : isPlaying ? (
@@ -133,10 +130,12 @@ export default function Dashboard({ navigation }) {
         <View style={styles.generalCard}>
           <View>
             <Text style={styles.infoText}>
-              Calories eaten <Text style={styles.infoSub}>1300/2200 kcal</Text>
+              Calories eaten{" "}
+              <Text style={styles.infoSub}>1300/2200 kcal</Text>
             </Text>
             <Text style={styles.infoText}>
-              Calories burned <Text style={styles.infoSub}>0/430 kcal</Text>
+              Calories burned{" "}
+              <Text style={styles.infoSub}>0/430 kcal</Text>
             </Text>
           </View>
 
@@ -215,9 +214,9 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   logo: {
-    width: 120,
-    height: 40,
-    resizeMode: "contain",
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#000",
   },
   addButton: {
     backgroundColor: "#000",

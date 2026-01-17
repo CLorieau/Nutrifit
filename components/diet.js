@@ -23,68 +23,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 const LOCALE = 'fr-FR';
 
-const MOCK_MOST_LOVED = [
-    {
-        id: 'r1',
-        title: 'Poulet rôti & légumes',
-        kcalPer100: 120,
-        image:
-            'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200&auto=format&fit=crop',
-        liked: true,
-    },
-    {
-        id: 'r2',
-        title: 'Salade César',
-        kcalPer100: 95,
-        image:
-            'https://images.unsplash.com/photo-1546793665-c74683f339c1?q=80&w=1200&auto=format&fit=crop',
-        liked: false,
-    },
-    {
-        id: 'r3',
-        title: 'Poke bowl saumon',
-        kcalPer100: 110,
-        image:
-            'https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=1200&auto=format&fit=crop',
-        liked: false,
-    },
-];
-
-const MOCK_FOR_YOU = [
-    {
-        id: 'f1',
-        title: 'Haricots verts & dinde',
-        kcalPer100: 80,
-        image:
-            'https://images.unsplash.com/photo-1512058564366-18510be2db19?q=80&w=1200&auto=format&fit=crop',
-        liked: false,
-    },
-    {
-        id: 'f2',
-        title: 'Pâtes complètes poulet',
-        kcalPer100: 130,
-        image:
-            'https://images.unsplash.com/photo-1521389508051-d7ffb5dc8bbf?q=80&w=1200&auto=format&fit=crop',
-        liked: false,
-    },
-    {
-        id: 'f3',
-        title: 'Bœuf sauté & riz',
-        kcalPer100: 145,
-        image:
-            'https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=1200&auto=format&fit=crop',
-        liked: false,
-    },
-    {
-        id: 'f4',
-        title: 'Pâtes pesto light',
-        kcalPer100: 115,
-        image:
-            'https://images.unsplash.com/photo-1528838060462-8b5d6a1d6a9a?q=80&w=1200&auto=format&fit=crop',
-        liked: true,
-    },
-];
-
+import api from "../api/axiosInstance";
 import { useChat } from "../ChatContext";
 
 export default function Diet({ navigation }) {
@@ -93,44 +32,53 @@ export default function Diet({ navigation }) {
 
     // ————— ÉTATS
     const [query, setQuery] = useState('');
-    const [liked, setLiked] = useState(() => {
-        // petit “store” local de likes (pourrait devenir AsyncStorage ou API)
-        const ids = [...MOCK_MOST_LOVED, ...MOCK_FOR_YOU]
-            .filter((r) => r.liked)
-            .map((r) => r.id);
-        return new Set(ids);
-    });
-    const [loading, setLoading] = useState(false);
+    const [liked, setLiked] = useState(new Set());
+    const [loading, setLoading] = useState(true);
+    const [allRecipes, setAllRecipes] = useState([]);
 
-    // ————— HOOK API FUTURE (placeholder)
-    // Remplace ce useEffect par un vrai fetch quand l’API sera prête.
-    // On garde loading pour montrer la structure “réaliste”.
+    // ————— API CALL
     useEffect(() => {
-        let mounted = true;
-        setLoading(true);
-        const t = setTimeout(() => {
-            if (mounted) setLoading(false);
-        }, 350);
-        return () => {
-            mounted = false;
-            clearTimeout(t);
+        const fetchRecipes = async () => {
+            try {
+                setLoading(true);
+                const response = await api.get("/recettes");
+                const data = response.data;
+
+                // Mapping des données
+                const mapped = data.map(r => ({
+                    id: r.id_recette,
+                    title: r.nom_recette,
+                    kcalPer100: r.calories,
+                    image: r.image_url,
+                    liked: false // ou logique de favoris si le back le gère
+                }));
+
+                setAllRecipes(mapped);
+            } catch (error) {
+                console.error("Erreur chargement recettes:", error);
+                Alert.alert("Erreur", "Impossible de charger les recettes.");
+            } finally {
+                setLoading(false);
+            }
         };
+
+        fetchRecipes();
     }, []);
 
     // ————— DONNÉES AFFICHÉES (filtrage par recherche)
-    const mostLoved = useMemo(() => {
-        const base = MOCK_MOST_LOVED.map((r) => ({ ...r, liked: liked.has(r.id) }));
-        if (!query.trim()) return base;
-        const q = query.toLowerCase();
-        return base.filter((r) => r.title.toLowerCase().includes(q));
-    }, [query, liked]);
+    // On sépare en deux listes arbitrairement pour l'UI (ex: 5 premiers = most loved)
+    const filtered = useMemo(() => {
+        let list = allRecipes;
+        if (query.trim()) {
+            const q = query.toLowerCase();
+            list = list.filter(r => r.title.toLowerCase().includes(q));
+        }
+        // Mise à jour de l'état "liked" local
+        return list.map(r => ({ ...r, liked: liked.has(r.id) }));
+    }, [query, allRecipes, liked]);
 
-    const forYou = useMemo(() => {
-        const base = MOCK_FOR_YOU.map((r) => ({ ...r, liked: liked.has(r.id) }));
-        if (!query.trim()) return base;
-        const q = query.toLowerCase();
-        return base.filter((r) => r.title.toLowerCase().includes(q));
-    }, [query, liked]);
+    const mostLoved = useMemo(() => filtered.slice(0, 5), [filtered]);
+    const forYou = useMemo(() => filtered.slice(5), [filtered]);
 
     // ————— ACTIONS
     const toggleLike = (id) => {
