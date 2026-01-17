@@ -52,7 +52,7 @@ export default function Dashboard({ navigation }) {
     >
       {/* HEADER */}
       <View style={styles.header}>
-        <Text style={styles.logo}>Logo</Text>
+        <Image source={require("../assets/logo.png")} style={styles.logo} />
         <TouchableOpacity style={styles.addButton}>
           <Ionicons name="add" size={26} color="#fff" />
         </TouchableOpacity>
@@ -76,7 +76,10 @@ export default function Dashboard({ navigation }) {
           {/* INFOS + PLAY + BARRE */}
           <View style={styles.infoContainer}>
             {/* Bouton Play/Pause/Retry */}
-            <TouchableOpacity onPress={handlePlayPause} style={styles.playButton}>
+            <TouchableOpacity
+              onPress={handlePlayPause}
+              style={styles.playButton}
+            >
               {progress >= 1 ? (
                 <Ionicons name="refresh" size={24} color="#fff" />
               ) : isPlaying ? (
@@ -129,12 +132,10 @@ export default function Dashboard({ navigation }) {
         <View style={styles.generalCard}>
           <View>
             <Text style={styles.infoText}>
-              Calories eaten{" "}
-              <Text style={styles.infoSub}>1300/2200 kcal</Text>
+              Calories eaten <Text style={styles.infoSub}>1300/2200 kcal</Text>
             </Text>
             <Text style={styles.infoText}>
-              Calories burned{" "}
-              <Text style={styles.infoSub}>0/430 kcal</Text>
+              Calories burned <Text style={styles.infoSub}>0/430 kcal</Text>
             </Text>
           </View>
 
@@ -172,8 +173,8 @@ export default function Dashboard({ navigation }) {
                   index === 0
                     ? "https://images.unsplash.com/photo-1528698827591-e19ccd7bc23d?q=80&w=1200"
                     : index === 1
-                    ? "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=1200"
-                    : "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200",
+                      ? "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=1200"
+                      : "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200",
               }}
               style={styles.mealImage}
             />
@@ -184,8 +185,8 @@ export default function Dashboard({ navigation }) {
                   {index === 0
                     ? "15:00 min • 650 kcal"
                     : index === 1
-                    ? "01:15 hr • 1650 kcal"
-                    : "30 min • 900 kcal"}
+                      ? "01:15 hr • 1650 kcal"
+                      : "30 min • 900 kcal"}
                 </Text>
               </View>
               <Ionicons name="search" size={22} color="#fff" />
@@ -213,9 +214,9 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   logo: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#000",
+    width: 120,
+    height: 40,
+    resizeMode: "contain",
   },
   addButton: {
     backgroundColor: "#000",
