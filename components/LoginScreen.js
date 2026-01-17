@@ -51,10 +51,7 @@ export default function LoginScreen({ navigation }) {
       // ✅ On stocke le token via le contexte (qui lui gère AsyncStorage)
       await signIn(accessToken);
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 347bde49dfb02e1f6cbc661f32cbd44f6bdc95f6
     } catch (error) {
       console.log(
           "Erreur login :",

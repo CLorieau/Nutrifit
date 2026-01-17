@@ -1,65 +1,80 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ImageBackground } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AuthContext from "../AuthContext";
+import api from "../api/axiosInstance";
 
 export default function GenderScreen({ navigation }) {
   const [selectedGender, setSelectedGender] = useState(null);
+  const { token, setUser } = useContext(AuthContext);
+
+  const handleContinue = async () => {
+    if (!selectedGender) return;
+    const sexeValue = selectedGender === "male" ? "masculin" : "feminin";
+
+    try {
+      const res = await api.put(
+          "/users/me",
+          { sexe: sexeValue },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+      );
+      setUser(res.data);
+      navigation.navigate("Age");
+    } catch (e) {
+      console.log("Erreur mise à jour sexe :", e?.response?.data || e.message);
+    }
+  };
 
   return (
-    <ImageBackground
-      source={require("../assets/welcome_page_pic.jpg")} // même image que la page précédente
-      style={styles.background}
-    >
-      <View style={styles.container}>
+      <ImageBackground
+          source={require("../assets/welcome_page_pic.jpg")}
+          style={styles.background}
+      >
+        <View style={styles.container}>
+          <Text style={styles.title}>Tell Us about Yourself</Text>
+          <Text style={styles.subtitle}>
+            To give you a better experience{"\n"}we need to know your gender
+          </Text>
 
-        <Text style={styles.title}>Tell Us about Yourself</Text>
-        <Text style={styles.subtitle}>
-          To give you a better experience{"\n"}we need to know your gender
-        </Text>
+          <View style={styles.genderRow}>
+            {/* Female */}
+            <TouchableOpacity
+                style={[
+                  styles.genderButton,
+                  selectedGender === "female" && styles.selectedFemale,
+                ]}
+                onPress={() => setSelectedGender("female")}
+            >
+              <Ionicons name="female" size={40} color="white" />
+              <Text style={styles.genderLabel}>Female</Text>
+            </TouchableOpacity>
 
-        <View style={styles.genderRow}>
-          {/* Female */}
+            {/* Male */}
+            <TouchableOpacity
+                style={[
+                  styles.genderButton,
+                  selectedGender === "male" && styles.selectedMale,
+                ]}
+                onPress={() => setSelectedGender("male")}
+            >
+              <Ionicons name="male" size={40} color="white" />
+              <Text style={styles.genderLabel}>Male</Text>
+            </TouchableOpacity>
+          </View>
+
           <TouchableOpacity
-            style={[
-              styles.genderButton,
-              selectedGender === "female" && styles.selectedFemale,
-            ]}
-            onPress={() => setSelectedGender("female")}
+              style={styles.continueBtn}
+              onPress={handleContinue}
+              disabled={!selectedGender}
           >
-            <Ionicons
-              name="female"
-              size={40}
-              color={selectedGender === "female" ? "white" : "white"}
-            />
-            <Text style={styles.genderLabel}>Female</Text>
-          </TouchableOpacity>
-
-          {/* Male */}
-          <TouchableOpacity
-            style={[
-              styles.genderButton,
-              selectedGender === "male" && styles.selectedMale,
-            ]}
-            onPress={() => setSelectedGender("male")}
-          >
-            <Ionicons
-              name="male"
-              size={40}
-              color={selectedGender === "male" ? "white" : "white"}
-            />
-            <Text style={styles.genderLabel}>Male</Text>
+            <Text style={styles.continueText}>Continue</Text>
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          style={styles.continueBtn}
-          onPress={() => navigation.navigate("Age")} // page suivante
-        >
-          <Text style={styles.continueText}>Continue</Text>
-        </TouchableOpacity>
-
-      </View>
-    </ImageBackground>
+      </ImageBackground>
   );
 }
 
@@ -107,7 +122,7 @@ const styles = StyleSheet.create({
     color: "white",
     marginTop: 2 ,
     fontWeight: "bold",
-    
+
   },
   continueBtn: {
     backgroundColor: "white",

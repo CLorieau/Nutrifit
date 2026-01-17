@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,9 @@ import {
   Image,
 } from "react-native";
 
+import AuthContext from "../AuthContext";
+import api from "../api/axiosInstance";
+
 export default function EquipmentScreen({ navigation }) {
   const [selected, setSelected] = useState(null);
 
@@ -16,6 +19,43 @@ export default function EquipmentScreen({ navigation }) {
     { id: 2, label: "Gym", icon: require("../assets/gym.png") },
     { id: 3, label: "Basic", icon: require("../assets/basic.png") },
   ];
+
+  const { token, setUser } = useContext(AuthContext);
+
+  const handleContinue = async () => {
+    if (!selected) return;
+
+    const option = options.find((o) => o.id === selected);
+    const equipements = option?.label || option?.id;
+
+    try {
+      const res = await api.put(
+          "/users/me",
+          { equipements },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+      );
+
+      setUser(res.data);
+
+      // ⛔️ NE PAS naviguer manuellement vers "Nav" ici
+      // App.js va détecter que le profil est complet
+      // et va basculer automatiquement sur le stack Dashboard (Nav + Training)
+
+      // ✅ donc on NE FAIT RIEN ici en navigation,
+      // l'écran va se démonter quand App.js re-rendra la bonne stack
+    } catch (e) {
+      console.log(
+          "Erreur mise à jour équipements :",
+          e?.response?.data || e.message
+      );
+    }
+  };
+
+
 
   return (
     <ImageBackground
@@ -82,11 +122,7 @@ export default function EquipmentScreen({ navigation }) {
         </View>
 
         {/* Continue Button */}
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate("Nav")} // à modifier plus tard
-          disabled={selected === null}
-        >
+        <TouchableOpacity style={styles.button} onPress={handleContinue}>
           <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
       </View>

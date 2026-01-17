@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   FlatList,
 } from "react-native";
 
+import AuthContext from "../AuthContext";
+import api from "../api/axiosInstance";
 export default function HeightScreen({ navigation }) {
   const heights = Array.from({ length: 91 }, (_, i) => i + 140); // 140–230 cm
   const ITEM_HEIGHT = 40;
@@ -21,66 +23,85 @@ export default function HeightScreen({ navigation }) {
     setSelectedIndex(index);
   };
 
+  const { token, setUser } = useContext(AuthContext);
+
+  const handleContinue = async () => {
+    const taille_cm = heights[selectedIndex];
+
+    try {
+      const res = await api.put(
+          "/users/me",
+          { taille_cm },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+      );
+      setUser(res.data);
+      navigation.navigate("Weight");
+    } catch (e) {
+      console.log("Erreur mise à jour taille :", e?.response?.data || e.message);
+    }
+  };
+
+
   return (
-    <ImageBackground
-      source={require("../assets/welcome_page_pic.jpg")}
-      style={styles.background}
-    >
-      <View style={styles.container}>
-        <Text style={styles.title}>What is your Height ?</Text>
+      <ImageBackground
+          source={require("../assets/welcome_page_pic.jpg")}
+          style={styles.background}
+      >
+        <View style={styles.container}>
+          <Text style={styles.title}>What is your Height ?</Text>
 
-        <View style={styles.selectorWrapper}>
-          {/* Petit rectangle blanc à gauche */}
-          <View style={styles.pointer} />
+          <View style={styles.selectorWrapper}>
+            {/* Petit rectangle blanc à gauche */}
+            <View style={styles.pointer} />
 
-          {/* LISTE des hauteurs */}
-          <FlatList
-            data={heights}
-            keyExtractor={(item) => item.toString()}
-            style={{ height: ITEM_HEIGHT * VISIBLE_ITEMS }}
-            contentContainerStyle={{
-              paddingVertical: (ITEM_HEIGHT * (VISIBLE_ITEMS - 1)) / 2,
-            }}
-            showsVerticalScrollIndicator={false}
-            snapToInterval={ITEM_HEIGHT}
-            decelerationRate="fast"
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            initialScrollIndex={selectedIndex}
-            getItemLayout={(_, index) => ({
-              length: ITEM_HEIGHT,
-              offset: ITEM_HEIGHT * index,
-              index,
-            })}
-            renderItem={({ item, index }) => {
-              const isSelected = index === selectedIndex;
+            {/* LISTE des hauteurs */}
+            <FlatList
+                data={heights}
+                keyExtractor={(item) => item.toString()}
+                style={{ height: ITEM_HEIGHT * VISIBLE_ITEMS }}
+                contentContainerStyle={{
+                  paddingVertical: (ITEM_HEIGHT * (VISIBLE_ITEMS - 1)) / 2,
+                }}
+                showsVerticalScrollIndicator={false}
+                snapToInterval={ITEM_HEIGHT}
+                decelerationRate="fast"
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
+                initialScrollIndex={selectedIndex}
+                getItemLayout={(_, index) => ({
+                  length: ITEM_HEIGHT,
+                  offset: ITEM_HEIGHT * index,
+                  index,
+                })}
+                renderItem={({ item, index }) => {
+                  const isSelected = index === selectedIndex;
 
-              return (
-                <View style={styles.itemContainer}>
-                  <Text
-                    style={[styles.heightText, isSelected && styles.selectedHeight]}
-                  >
-                    {item}
-                  </Text>
-                </View>
-              );
-            }}
-          />
+                  return (
+                      <View style={styles.itemContainer}>
+                        <Text
+                            style={[
+                              styles.heightText,
+                              isSelected && styles.selectedHeight,
+                            ]}
+                        >
+                          {item}
+                        </Text>
+                      </View>
+                  );
+                }}
+            />
+          </View>
+
+          {/* Bouton Continue */}
+          <TouchableOpacity style={styles.button} onPress={handleContinue}>
+            <Text style={styles.buttonText}>Continue</Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Bouton Continue */}
-        <TouchableOpacity
-          style={styles.button}
-<<<<<<< HEAD
-          onPress={() => navigation.navigate("Weight")}
-=======
-          onPress={() => navigation.navigate("Nav")}
->>>>>>> 347bde49dfb02e1f6cbc661f32cbd44f6bdc95f6
-        >
-          <Text style={styles.buttonText}>Continue</Text>
-        </TouchableOpacity>
-      </View>
-    </ImageBackground>
+      </ImageBackground>
   );
 }
 
@@ -93,8 +114,7 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: "bold",
     marginBottom: 40,
-    bottom:50,
-
+    bottom: 50,
   },
 
   selectorWrapper: {

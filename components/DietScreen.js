@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,9 @@ import {
   Image,
 } from "react-native";
 
+import AuthContext from "../AuthContext";
+import api from "../api/axiosInstance";
+
 export default function DietScreen({ navigation }) {
   const [selected, setSelected] = useState(null);
 
@@ -16,6 +19,32 @@ export default function DietScreen({ navigation }) {
     { id: 2, label: "No pork", icon: require("../assets/no_pork.png") },
     { id: 3, label: "None", icon: require("../assets/none.png") },
   ];
+
+  const { token, setUser } = useContext(AuthContext);
+
+  const handleContinue = async () => {
+    if (!selected) return;
+
+    const option = options.find(o => o.id === selected);
+    const regime_alimentaire = option?.label || option?.id;
+
+    try {
+      const res = await api.put(
+          "/users/me",
+          { regime_alimentaire },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+      );
+      setUser(res.data);
+      navigation.navigate("Goal");
+    } catch (e) {
+      console.log("Erreur mise à jour régime alimentaire :", e?.response?.data || e.message);
+    }
+  };
+
 
   return (
     <ImageBackground
@@ -82,11 +111,7 @@ export default function DietScreen({ navigation }) {
 
 
         {/* Continue */}
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate("Goal")} // change next screen later
-          disabled={selected === null}
-        >
+        <TouchableOpacity style={styles.button} onPress={handleContinue}>
           <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
       </View>

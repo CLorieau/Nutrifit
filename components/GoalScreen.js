@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,9 @@ import {
   Image,
 } from "react-native";
 
+import AuthContext from "../AuthContext";
+import api from "../api/axiosInstance";
+
 export default function GoalScreen({ navigation }) {
   const [selected, setSelected] = useState(null);
 
@@ -15,6 +18,33 @@ export default function GoalScreen({ navigation }) {
     { id: 1, label: "Loose", icon: require("../assets/loose.png") },
     { id: 2, label: "Gain", icon: require("../assets/gain.png") },
   ];
+
+  const { token, setUser } = useContext(AuthContext);
+
+  const handleContinue = async () => {
+    if (!selected) return;
+
+    const goal = goals.find(g => g.id === selected);
+    const objectif = goal?.label || goal?.id;
+
+    try {
+      const res = await api.put(
+          "/users/me",
+          { objectif },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+      );
+      setUser(res.data);
+      navigation.navigate("Equipment");
+    } catch (e) {
+      console.log("Erreur mise à jour objectif :", e?.response?.data || e.message);
+    }
+  };
+
+
 
   return (
     <ImageBackground
@@ -54,13 +84,10 @@ export default function GoalScreen({ navigation }) {
         </View>
 
         {/* CONTINUE */}
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate("Equipment")} // à modifier plus tard
-          disabled={selected === null}
-        >
+        <TouchableOpacity style={styles.button} onPress={handleContinue}>
           <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
+
       </View>
     </ImageBackground>
   );

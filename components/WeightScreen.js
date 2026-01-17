@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,9 @@ import {
   TouchableOpacity,
   FlatList,
 } from "react-native";
+
+import AuthContext from "../AuthContext";
+import api from "../api/axiosInstance";
 
 export default function WeightScreen({ navigation }) {
   const weights = Array.from({ length: 100 }, (_, i) => i + 30); // 30–129 kg
@@ -20,6 +23,29 @@ export default function WeightScreen({ navigation }) {
     const index = Math.round(offsetX / ITEM_WIDTH);
     setSelectedIndex(index);
   };
+
+  const { token, setUser } = useContext(AuthContext);
+
+  const handleContinue = async () => {
+    const poids_kg = weights[selectedIndex];
+
+    try {
+      const res = await api.put(
+          "/users/me",
+          { poids_kg },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+      );
+      setUser(res.data);
+      navigation.navigate("Diet");
+    } catch (e) {
+      console.log("Erreur mise à jour poids :", e?.response?.data || e.message);
+    }
+  };
+
 
   return (
     <ImageBackground
@@ -66,14 +92,7 @@ export default function WeightScreen({ navigation }) {
         <Text style={styles.arrow}>▲</Text>
 
         {/* Continue */}
-        <TouchableOpacity
-          style={styles.button}
-<<<<<<< HEAD
-          onPress={() => navigation.navigate("Diet")}
-=======
-          onPress={() => navigation.navigate("Height")}
->>>>>>> 347bde49dfb02e1f6cbc661f32cbd44f6bdc95f6
-        >
+        <TouchableOpacity style={styles.button} onPress={handleContinue}>
           <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
       </View>
