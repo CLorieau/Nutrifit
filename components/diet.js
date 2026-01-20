@@ -50,7 +50,8 @@ export default function Diet({ navigation }) {
                     title: r.nom_recette,
                     kcalPer100: r.calories,
                     image: r.image_url,
-                    liked: false // ou logique de favoris si le back le gère
+                    liked: false, // ou logique de favoris si le back le gère
+                    ingredients: r.ingredients
                 }));
 
                 setAllRecipes(mapped);
@@ -93,7 +94,6 @@ export default function Diet({ navigation }) {
     const onOpenRecipe = (recipe) => {
         // plus tard: navigation vers “RecipeDetail”
         // navigation.navigate('RecipeDetail', { id: recipe.id })
-        Alert.alert('Recette', `Ouvrir la recette: ${recipe.title}`);
         navigation.navigate('RecipeDetail', { recipe });
     };
 
