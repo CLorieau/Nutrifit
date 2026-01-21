@@ -1,49 +1,14 @@
 // components/recipeDetail.js
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     View,
     Text,
     Image,
     ScrollView,
     Pressable,
-    Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-// Exemple d’ingrédients avec images en ligne
-const MOCK_INGREDIENTS = [
-    {
-        id: 'i1',
-        name: 'Pepper',
-        image: 'https://upload.wikimedia.org/wikipedia/commons/8/8c/Bell_pepper_red.jpg',
-    },
-    {
-        id: 'i2',
-        name: 'Zucchini',
-        image: 'https://upload.wikimedia.org/wikipedia/commons/4/4c/Zucchini.jpg',
-    },
-    {
-        id: 'i3',
-        name: 'Rice',
-        image: 'https://upload.wikimedia.org/wikipedia/commons/6/6f/Cooked_rice_in_a_bowl.jpg',
-    },
-    {
-        id: 'i4',
-        name: 'Minced meat',
-        image: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Ground_beef_1.jpg',
-    },
-    {
-        id: 'i5',
-        name: 'Tomato',
-        image: 'https://upload.wikimedia.org/wikipedia/commons/8/89/Tomato_je.jpg',
-    },
-    {
-        id: 'i6',
-        name: 'Mushroom',
-        image: 'https://upload.wikimedia.org/wikipedia/commons/b/b2/White_button_mushrooms.jpg',
-    },
-];
 
 export default function RecipeDetail({ route, navigation }) {
     const insets = useSafeAreaInsets();
@@ -58,6 +23,20 @@ export default function RecipeDetail({ route, navigation }) {
     const handleBack = () => {
         navigation.goBack();
     };
+
+    // Parse ingredients safely
+    const ingredients = useMemo(() => {
+        if (!recipe?.ingredients) return [];
+        try {
+            // Check if it's already an object (if passed pre-parsed) or a string
+            return typeof recipe.ingredients === 'string'
+                ? JSON.parse(recipe.ingredients)
+                : recipe.ingredients;
+        } catch (error) {
+            console.error('Error parsing ingredients:', error);
+            return [];
+        }
+    }, [recipe?.ingredients]);
 
     if (!recipe) {
         return (
@@ -160,54 +139,60 @@ export default function RecipeDetail({ route, navigation }) {
                         Ingredients
                     </Text>
 
-                    <View
-                        style={{
-                            flexDirection: 'row',
-                            flexWrap: 'wrap',
-                            justifyContent: 'flex-start',
-                        }}
-                    >
-                        {MOCK_INGREDIENTS.map((ing) => (
-                            <View
-                                key={ing.id}
-                                style={{
-                                    width: '25%', // 4 éléments par ligne
-                                    alignItems: 'center',
-                                    marginBottom: 20,
-                                }}
-                            >
+                    {ingredients.length === 0 ? (
+                        <Text style={{ fontStyle: 'italic', color: '#666' }}>
+                            Pas d'ingrédients listés.
+                        </Text>
+                    ) : (
+                        <View style={{ marginTop: 4 }}>
+                            {ingredients.map((ing, index) => (
                                 <View
+                                    key={index}
                                     style={{
-                                        width: 70,
-                                        height: 70,
-                                        borderRadius: 35,
-                                        backgroundColor: '#fff',
-                                        borderWidth: 1,
-                                        borderColor: '#EEE',
-                                        overflow: 'hidden',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
+                                        flexDirection: 'row',
+                                        alignItems: 'flex-start',
+                                        paddingVertical: 12,
+                                        borderBottomWidth: index === ingredients.length - 1 ? 0 : 1,
+                                        borderBottomColor: '#E5E7EB',
                                     }}
                                 >
-                                    <Image
-                                        source={{ uri: ing.image }}
-                                        style={{ width: '100%', height: '100%' }}
-                                        resizeMode="cover"
+                                    {/* Bullet point */}
+                                    <View
+                                        style={{
+                                            width: 6,
+                                            height: 6,
+                                            borderRadius: 3,
+                                            backgroundColor: '#111',
+                                            marginTop: 8,
+                                            marginRight: 12,
+                                        }}
                                     />
+                                    {/* Content */}
+                                    <View style={{ flex: 1 }}>
+                                        <Text
+                                            style={{
+                                                fontSize: 16,
+                                                fontWeight: '600',
+                                                color: '#111',
+                                                marginBottom: 2,
+                                            }}
+                                        >
+                                            {ing.food ? ing.food.charAt(0).toUpperCase() + ing.food.slice(1) : 'Ingrédient'}
+                                        </Text>
+                                        <Text
+                                            style={{
+                                                fontSize: 14,
+                                                color: '#666',
+                                                lineHeight: 20,
+                                            }}
+                                        >
+                                            {ing.text}
+                                        </Text>
+                                    </View>
                                 </View>
-                                <Text
-                                    style={{
-                                        fontSize: 13,
-                                        color: '#111',
-                                        textAlign: 'center',
-                                        marginTop: 6,
-                                    }}
-                                >
-                                    {ing.name}
-                                </Text>
-                            </View>
-                        ))}
-                    </View>
+                            ))}
+                        </View>
+                    )}
                 </View>
             </ScrollView>
         </View>

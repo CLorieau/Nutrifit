@@ -12,11 +12,24 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Progress from "react-native-progress";
 import { useNavigation } from "@react-navigation/native"; // ✅ pour naviguer
 import { useChat } from "../ChatContext";
+import { getExercices } from "../api/exercices";
+
+const parseMuscles = (muscles) => {
+  if (!muscles) return "Muscles";
+  try {
+    return JSON.parse(muscles).join(", ");
+  } catch (e) {
+    return muscles;
+  }
+};
 
 export default function Training() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation(); // ✅ accès à la navigation
   const { openChat } = useChat();
+
+  const [exercises, setExercises] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -40,6 +53,22 @@ export default function Training() {
     return () => clearInterval(interval);
   }, [isPlaying]);
 
+  // --- Chargement des exercices depuis l'API ---
+  useEffect(() => {
+    const fetchExercises = async () => {
+      try {
+        const response = await getExercices();
+        setExercises(response.data);
+      } catch (error) {
+        console.error("Erreur lors du chargement des exercices:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchExercises();
+  }, []);
+
   // --- Gestion des boutons Play/Pause/Restart ---
   const handlePress = () => {
     // 👉 quand on clique sur play/pause, on va à TrainingDetail
@@ -50,36 +79,6 @@ export default function Training() {
     if (progress >= 1) return "refresh-circle"; // flèche épaisse
     return isPlaying ? "pause" : "play";
   };
-
-  const recommendations = [
-    {
-      id: "1",
-      title: "Pull up",
-      time: "15:00 min",
-      calories: 120,
-      type: "Cardio",
-      image:
-        "https://cdn.pixabay.com/photo/2016/03/27/19/50/pull-up-1284787_1280.jpg",
-    },
-    {
-      id: "2",
-      title: "Sit Up",
-      time: "15:00 min",
-      calories: 120,
-      type: "Cardio",
-      image:
-        "https://cdn.pixabay.com/photo/2016/11/29/06/18/abdominal-1867728_1280.jpg",
-    },
-    {
-      id: "3",
-      title: "Biceps curl",
-      time: "15:00 min",
-      calories: 120,
-      type: "Cardio",
-      image:
-        "https://cdn.pixabay.com/photo/2016/03/27/21/16/bodybuilder-1284570_1280.jpg",
-    },
-  ];
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 20 }]}>
@@ -173,31 +172,42 @@ export default function Training() {
       <Text style={styles.sectionTitle}>Recommendation</Text>
 
       <FlatList
-        data={recommendations}
-        keyExtractor={(item) => item.id}
+        data={exercises}
+        keyExtractor={(item) => item.id_exercice.toString()}
         renderItem={({ item }) => (
           <TouchableOpacity
-            onPress={() => navigation.navigate("TrainingDetail")} // ✅ clic sur un exercice
+            onPress={() =>
+              navigation.navigate("TrainingDetail", { exerciseId: item.id_exercice })
+            } // ✅ clic sur un exercice
             activeOpacity={0.8}
           >
             <View style={styles.exerciseCard}>
               <Image
-                source={{ uri: item.image }}
+                source={{
+                  uri: item.image_path || "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=150",
+                }}
                 style={styles.exerciseImage}
               />
               <View style={styles.exerciseInfo}>
-                <Text style={styles.exerciseTitle}>{item.title}</Text>
+                <Text style={styles.exerciseTitle}>{item.nom_exercice}</Text>
                 <Text style={styles.exerciseMeta}>
-                  {item.time} | {item.calories} kcal
+                  {item.materiel ? item.materiel.replace(/_/g, " ") : "N/A"}
                 </Text>
-                <Text style={styles.exerciseMeta}>Calories Burned</Text>
+                <Text style={styles.exerciseMeta} numberOfLines={1}>
+                  {parseMuscles(item.muscle_cible)}
+                </Text>
               </View>
               <View style={styles.tag}>
-                <Text style={styles.tagText}>{item.type}</Text>
+                <Text style={styles.tagText}>
+                  {item.type_exercice || "Exercise"}
+                </Text>
               </View>
             </View>
           </TouchableOpacity>
         )}
+        ListEmptyComponent={
+          !loading && <Text style={{ textAlign: "center", marginTop: 20 }}>No exercises found.</Text>
+        }
       />
     </View>
   );
