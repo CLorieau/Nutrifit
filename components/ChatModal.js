@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     Modal,
     View,
@@ -9,11 +9,14 @@ import {
     KeyboardAvoidingView,
     Platform,
     TouchableWithoutFeedback,
-    Keyboard
+    Keyboard,
+    ActivityIndicator,
+    FlatList
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useChat } from '../ChatContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as chatAPI from '../api/chat';
 
 export default function ChatModal() {
     const { isChatOpen, closeChat } = useChat();
@@ -22,22 +25,44 @@ export default function ChatModal() {
     const [messages, setMessages] = useState([
         { id: 1, text: "Salut ! Je suis ton assistant NutriFit. Comment puis-je t'aider aujourd'hui ?", sender: 'bot' }
     ]);
+    const flatListRef = useRef(null);
 
-    const sendMessage = () => {
-        if (!message.trim()) return;
+    const [isLoading, setIsLoading] = useState(false);
 
-        const newMsg = { id: Date.now(), text: message, sender: 'user' };
-        setMessages([...messages, newMsg]);
+    const sendMessage = async () => {
+        if (!message.trim() || isLoading) return;
+
+        const userMsgText = message;
+        const newMsg = { id: Date.now(), text: userMsgText, sender: 'user' };
+        setMessages(prev => [...prev, newMsg]);
         setMessage('');
+        setIsLoading(true);
 
-        // Simulation réponse bot
-        setTimeout(() => {
-            setMessages(prev => [...prev, {
+        try {
+            // Importation dynamique ou via import en haut si possible, mais ici on garde la structure
+            // Note: Idéalement, importer { chatWithBot } from '../api/chat' en haut du fichier.
+            // Je vais supposer que l'import sera ajouté en haut.
+
+            const response = await chatAPI.chatWithBot(userMsgText);
+
+            const botMsg = {
                 id: Date.now() + 1,
-                text: "C'est noté ! Cette fonctionnalité est en cours de développement côté backend.",
+                text: response.response,
                 sender: 'bot'
-            }]);
-        }, 1000);
+            };
+            setMessages(prev => [...prev, botMsg]);
+
+        } catch (error) {
+            const errorMsg = {
+                id: Date.now() + 1,
+                text: "Désolé, je rencontre un problème de connexion pour le moment.",
+                sender: 'bot',
+                isError: true
+            };
+            setMessages(prev => [...prev, errorMsg]);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -47,59 +72,72 @@ export default function ChatModal() {
             visible={isChatOpen}
             onRequestClose={closeChat}
         >
-            <TouchableWithoutFeedback onPress={closeChat}>
-                <View style={styles.overlay}>
-                    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                        <KeyboardAvoidingView
-                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                            style={[styles.modalContainer, { marginTop: insets.top + 20, marginBottom: insets.bottom + 20 }]}
-                        >
-                            {/* HEADER */}
-                            <View style={styles.header}>
-                                <View style={styles.headerContent}>
-                                    <Ionicons name="chatbubble-ellipses-outline" size={24} color="#A3FF3D" />
-                                    <Text style={styles.headerTitle}>Assistant NutriFit</Text>
-                                </View>
-                                <TouchableOpacity onPress={closeChat} style={styles.closeButton}>
-                                    <Ionicons name="close" size={24} color="#fff" />
-                                </TouchableOpacity>
-                            </View>
+            <View style={styles.overlay}>
+                {/* Arrière-plan invisible pour fermer le chat en cliquant dehors */}
+                <TouchableWithoutFeedback onPress={closeChat}>
+                    <View style={StyleSheet.absoluteFill} />
+                </TouchableWithoutFeedback>
 
-                            {/* MESSAGES */}
-                            <View style={styles.messagesContainer}>
-                                {messages.map((msg) => (
-                                    <View
-                                        key={msg.id}
-                                        style={[
-                                            styles.messageBubble,
-                                            msg.sender === 'user' ? styles.userBubble : styles.botBubble
-                                        ]}
-                                    >
-                                        <Text style={[
-                                            styles.messageText,
-                                            msg.sender === 'user' ? styles.userText : styles.botText
-                                        ]}>{msg.text}</Text>
-                                    </View>
-                                ))}
-                            </View>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={[styles.modalContainer, { marginTop: insets.top + 20, marginBottom: insets.bottom + 20 }]}
+                    onStartShouldSetResponder={() => true} // Empêche le clic de passer à travers vers l'arrière-plan
+                >
+                    {/* HEADER */}
+                    <View style={styles.header}>
+                        <View style={styles.headerContent}>
+                            <Ionicons name="chatbubble-ellipses-outline" size={24} color="#A3FF3D" />
+                            <Text style={styles.headerTitle}>Assistant NutriFit</Text>
+                        </View>
+                        <TouchableOpacity onPress={closeChat} style={styles.closeButton}>
+                            <Ionicons name="close" size={24} color="#fff" />
+                        </TouchableOpacity>
+                    </View>
 
-                            {/* INPUT */}
-                            <View style={styles.inputContainer}>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Posez votre question..."
-                                    placeholderTextColor="#666"
-                                    value={message}
-                                    onChangeText={setMessage}
-                                />
-                                <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
-                                    <Ionicons name="send" size={20} color="#000" />
-                                </TouchableOpacity>
+                    {/* MESSAGES */}
+                    <FlatList
+                        ref={flatListRef}
+                        data={messages}
+                        keyExtractor={item => item.id.toString()}
+                        style={styles.messagesContainer}
+                        contentContainerStyle={{ padding: 16, gap: 12 }}
+                        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+                        keyboardDismissMode="on-drag"
+                        keyboardShouldPersistTaps="handled"
+                        renderItem={({ item: msg }) => (
+                            <View
+                                style={[
+                                    styles.messageBubble,
+                                    msg.sender === 'user' ? styles.userBubble : styles.botBubble
+                                ]}
+                            >
+                                <Text style={[
+                                    styles.messageText,
+                                    msg.sender === 'user' ? styles.userText : styles.botText
+                                ]}>{msg.text}</Text>
                             </View>
-                        </KeyboardAvoidingView>
-                    </TouchableWithoutFeedback>
-                </View>
-            </TouchableWithoutFeedback>
+                        )}
+                    />
+
+                    {/* INPUT */}
+                    <View style={styles.inputContainer}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Posez votre question..."
+                            placeholderTextColor="#666"
+                            value={message}
+                            onChangeText={setMessage}
+                        />
+                        <TouchableOpacity onPress={sendMessage} style={styles.sendButton} disabled={isLoading}>
+                            {isLoading ? (
+                                <ActivityIndicator size="small" color="#000" />
+                            ) : (
+                                <Ionicons name="send" size={20} color="#000" />
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </KeyboardAvoidingView>
+            </View>
         </Modal>
     );
 }
@@ -149,8 +187,6 @@ const styles = StyleSheet.create({
     },
     messagesContainer: {
         flex: 1,
-        padding: 16,
-        gap: 12,
     },
     messageBubble: {
         maxWidth: '80%',
