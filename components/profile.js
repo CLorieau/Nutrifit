@@ -22,7 +22,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 // 🔥 AJOUT : Import du AuthContext pour accéder à signOut()
 import AuthContext from "../AuthContext";
 
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 
 export default function Profile() {
   const insets = useSafeAreaInsets();
@@ -42,7 +42,6 @@ export default function Profile() {
     nb_jours_entrainement: 0,
   });
 
-
   const fetchUserData = async () => {
     try {
       const response = await getProfile();
@@ -58,7 +57,7 @@ export default function Profile() {
   useFocusEffect(
     React.useCallback(() => {
       fetchUserData();
-    }, [])
+    }, []),
   );
 
   // Calculate calories based on user stats
@@ -82,7 +81,6 @@ export default function Profile() {
     // Assuming no tracked food for now, so left = total
     return { total, left: total };
   };
-
 
   const handleLogout = () => {
     Alert.alert("Déconnexion", "Voulez-vous vraiment vous déconnecter ?", [
@@ -125,7 +123,9 @@ export default function Profile() {
     <View style={[styles.container, { paddingTop: insets.top + 20 }]}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>Profil</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('EditProfile', { userData })}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("EditProfile", { userData })}
+        >
           <Text style={styles.editButtonText}>Modifier</Text>
         </TouchableOpacity>
       </View>
@@ -169,7 +169,10 @@ export default function Profile() {
       </View>
 
       <View style={styles.bottomCard}>
-        <TouchableOpacity style={styles.optionButton}>
+        <TouchableOpacity
+          style={styles.optionButton}
+          onPress={() => navigation.navigate("Favorites")}
+        >
           <Text style={styles.optionText}>Favoris</Text>
         </TouchableOpacity>
 
@@ -196,15 +199,15 @@ const styles = StyleSheet.create({
     color: "#0A0A0A",
   },
   headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 20,
   },
   editButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#000', // Black for visibility on white
+    fontWeight: "600",
+    color: "#000", // Black for visibility on white
   },
   profileCard: {
     backgroundColor: "#000",
