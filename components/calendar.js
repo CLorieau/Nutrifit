@@ -53,7 +53,7 @@ function monthLabel(date) {
 function mapDatabaseToEvents(dbData) {
   const events = [];
 
-  // 1. Traitement des Repas (On fixe des heures arbitraires selon la catégorie)
+  // 1. Traitement des Repas
   const mealTimes = {
     petit_dejeuner: { start: "08:00", end: "08:30", duration: "30 min" },
     dejeuner: { start: "12:30", end: "13:30", duration: "1 h" },
@@ -62,17 +62,43 @@ function mapDatabaseToEvents(dbData) {
   };
 
   dbData.repas.forEach((r) => {
-    const timeInfo = mealTimes[r.categorie] || {
-      start: "??:??",
-      end: "??:??",
-      duration: "?",
-    };
+    let start = "??:??";
+    let end = "??:??";
+    let duration = "?";
+
+    // Si l'heure est définie dans l'objet repas, on l'utilise
+    if (r.heure_debut) {
+      start = r.heure_debut; // Format attendu "HH:MM:SS" ou "HH:MM"
+      // Si la chaîne contient des secondes, on les coupe pour l'affichage
+      if (start.length > 5) {
+        start = start.slice(0, 5);
+      }
+      duration = "1 h";
+
+      // Calcul simple de l'heure de fin (+1h)
+      try {
+        const [h, m] = start.split(":").map(Number);
+        const endH = (h + 1) % 24;
+        end = `${endH < 10 ? "0" + endH : endH}:${m < 10 ? "0" + m : m}`;
+      } catch (e) {
+        end = "??:??";
+      }
+    } else {
+      // Sinon on fallback sur les horaires par catégorie
+      const timeInfo = mealTimes[r.categorie];
+      if (timeInfo) {
+        start = timeInfo.start;
+        end = timeInfo.end;
+        duration = timeInfo.duration;
+      }
+    }
+
     events.push({
       type: "meal",
       title: r.recette ? r.recette.nom : "Repas libre", // Nom de la recette
-      start: timeInfo.start,
-      end: timeInfo.end,
-      duration: timeInfo.duration,
+      start: start,
+      end: end,
+      duration: duration,
       details: r.recette ? `${r.recette.calories} kcal` : "",
     });
   });
