@@ -50,6 +50,27 @@ function monthLabel(date) {
 }
 
 // --- FONCTION DE MAPPING (Transforme la BDD en Visuel Calendrier) ---
+// --- Helpers time ---
+function timeToMinutes(timeStr) {
+  if (!timeStr || timeStr === "??:??") return -1;
+  const [h, m] = timeStr.split(":").map(Number);
+  return h * 60 + (m || 0);
+}
+
+function formatTime(totalMinutes) {
+  const h = Math.floor(totalMinutes / 60) % 24;
+  const m = totalMinutes % 60;
+  return `${h < 10 ? "0" + h : h}:${m < 10 ? "0" + m : m}`;
+}
+
+function checkCollision(start, end, events) {
+  return events.some((e) => {
+    if (e.startMin === -1 || e.endMin === -1) return false;
+    return start < e.endMin && end > e.startMin;
+  });
+}
+
+// --- FONCTION DE MAPPING (Transforme la BDD en Visuel Calendrier) ---
 function mapDatabaseToEvents(dbData) {
   const events = [];
 
@@ -66,25 +87,15 @@ function mapDatabaseToEvents(dbData) {
     let end = "??:??";
     let duration = "?";
 
-    // Si l'heure est définie dans l'objet repas, on l'utilise
     if (r.heure_debut) {
-      start = r.heure_debut; // Format attendu "HH:MM:SS" ou "HH:MM"
-      // Si la chaîne contient des secondes, on les coupe pour l'affichage
-      if (start.length > 5) {
-        start = start.slice(0, 5);
-      }
+      start = r.heure_debut;
+      if (start.length > 5) start = start.slice(0, 5);
       duration = "1 h";
-
-      // Calcul simple de l'heure de fin (+1h)
-      try {
-        const [h, m] = start.split(":").map(Number);
-        const endH = (h + 1) % 24;
-        end = `${endH < 10 ? "0" + endH : endH}:${m < 10 ? "0" + m : m}`;
-      } catch (e) {
-        end = "??:??";
-      }
+      const startMin = timeToMinutes(start);
+      // Calcul fin +1h
+      const endMin = startMin + 60;
+      end = formatTime(endMin);
     } else {
-      // Sinon on fallback sur les horaires par catégorie
       const timeInfo = mealTimes[r.categorie];
       if (timeInfo) {
         start = timeInfo.start;
@@ -95,30 +106,59 @@ function mapDatabaseToEvents(dbData) {
 
     events.push({
       type: "meal",
-      title: r.recette ? r.recette.nom : "Repas libre", // Nom de la recette
+      title: r.recette ? r.recette.nom : "Repas libre",
       start: start,
       end: end,
       duration: duration,
       details: r.recette ? `${r.recette.calories} kcal` : "",
+      startMin: timeToMinutes(start),
+      endMin: timeToMinutes(end),
     });
   });
 
-  // 2. Traitement des Séances (On les place arbitrairement à 18h)
+  // 2. Traitement des Séances (Placement Intelligent)
+  // Priorités : 15h, puis 9h, puis libre.
   dbData.seances.forEach((s) => {
-    // Calcul heure fin basique (18:00 + duree)
-    const startHour = 18;
-    const endHour = startHour + Math.floor(s.duree / 60);
-    const endMin = s.duree % 60;
-    const endStr = `${endHour}:${endMin < 10 ? "0" + endMin : endMin}`;
+    const durationMin = s.duree || 60; // Par défaut 60 min
+    const durationStr = `${Math.floor(durationMin / 60)}h ${durationMin % 60 > 0 ? (durationMin % 60) + "min" : ""}`;
 
-    events.push({
-      type: "workout",
-      title: s.nom,
-      start: "18:00",
-      end: endStr,
-      duration: `${Math.floor(s.duree / 60)}h ${s.duree % 60 > 0 ? (s.duree % 60) + "min" : ""}`,
-      details: "Objectif forme",
-    });
+    let placedStart = -1;
+
+    // Tentative 1 : 15h00 (900 min)
+    if (!checkCollision(900, 900 + durationMin, events)) {
+      placedStart = 900;
+    }
+    // Tentative 2 : 09h00 (540 min)
+    else if (!checkCollision(540, 540 + durationMin, events)) {
+      placedStart = 540;
+    }
+    // Tentative 3 : Recherche créneau libre (de 6h à 22h, pas de 30min)
+    else {
+      for (let t = 360; t <= 1320 - durationMin; t += 30) {
+        if (!checkCollision(t, t + durationMin, events)) {
+          placedStart = t;
+          break;
+        }
+      }
+    }
+
+    // Si on a trouvé une place
+    if (placedStart !== -1) {
+      const placedEnd = placedStart + durationMin;
+      events.push({
+        type: "workout",
+        title: s.nom,
+        start: formatTime(placedStart),
+        end: formatTime(placedEnd),
+        duration: durationStr,
+        details: "Objectif forme",
+        startMin: placedStart,
+        endMin: placedEnd,
+      });
+    } else {
+      // Pas de place trouvée -> on n'ajoute pas l'entraînement (ou on loggue)
+      console.warn("Pas de créneau disponible pour l'entraînement :", s.nom);
+    }
   });
 
   // Tri par heure de début
