@@ -22,9 +22,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 // 🔥 AJOUT : Import du AuthContext pour accéder à signOut()
 import AuthContext from "../AuthContext";
 
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+
 export default function Profile() {
   const insets = useSafeAreaInsets();
   const { signOut } = useContext(AuthContext);
+  const navigation = useNavigation();
 
   const [hasError, setHasError] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
@@ -38,6 +41,25 @@ export default function Profile() {
     sexe: "masculin",
     nb_jours_entrainement: 0,
   });
+
+
+  const fetchUserData = async () => {
+    try {
+      const response = await getProfile();
+      setUserData(response.data);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      setHasError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchUserData();
+    }, [])
+  );
 
   // Calculate calories based on user stats
   const calculateCalories = (user) => {
@@ -61,26 +83,6 @@ export default function Profile() {
     return { total, left: total };
   };
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const response = await getProfile();
-        // Assuming response.data contains the user object fields directly
-        setUserData(response.data);
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-        setHasError(true);
-        Alert.alert(
-          "Erreur",
-          "Impossible de récupérer les informations de profil.",
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserData();
-  }, []);
 
   const handleLogout = () => {
     Alert.alert("Déconnexion", "Voulez-vous vraiment vous déconnecter ?", [
@@ -121,7 +123,12 @@ export default function Profile() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 20 }]}>
-      <Text style={styles.title}>Profil</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>Profil</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('EditProfile', { userData })}>
+          <Text style={styles.editButtonText}>Modifier</Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.profileCard}>
         <View style={styles.avatarContainer}>
@@ -154,9 +161,6 @@ export default function Profile() {
       <View style={styles.goalCard}>
         <View style={styles.goalHeader}>
           <Text style={styles.sectionTitle}>Mes objectifs</Text>
-          <TouchableOpacity>
-            <Text style={styles.editText}>Modifier</Text>
-          </TouchableOpacity>
         </View>
 
         <Text style={styles.goalLine}>{userData.objectif || "Non défini"}</Text>
@@ -189,8 +193,18 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 34,
     fontWeight: "700",
-    marginBottom: 20,
     color: "#0A0A0A",
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  editButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000', // Black for visibility on white
   },
   profileCard: {
     backgroundColor: "#000",

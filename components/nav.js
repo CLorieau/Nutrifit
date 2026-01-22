@@ -1,19 +1,19 @@
 // components/nav.js
 import React from 'react';
-import { View, Text, TouchableOpacity }     from 'react-native';
-import { NavigationContainer }              from '@react-navigation/native';
-import { createBottomTabNavigator }         from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator }       from '@react-navigation/native-stack';
-import { SafeAreaView, useSafeAreaInsets }  from 'react-native-safe-area-context';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-import CalendarView         from "../screens/calendarview";
-import ProfileView          from "../screens/profileview";
-import DietView             from "../screens/dietview";
-import RecipeDetailView     from "../screens/recipeDetailView";
-import TrainingView         from "../screens/trainingview";
-import TrainingDetailView   from "../screens/trainingDetailView";
-import DashboardView       from "../screens/dashboardView";
+import CalendarView from "../screens/calendarview";
+import ProfileView from "../screens/profileview";
+import DietView from "../screens/dietview";
+import RecipeDetailView from "../screens/recipeDetailView";
+import TrainingView from "../screens/trainingview";
+import TrainingDetailView from "../screens/trainingDetailView";
+import DashboardView from "../screens/dashboardView";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -147,13 +147,13 @@ function CustomTabBar({ state, descriptors, navigation }) {
 
 /* --------- Dashboard stack (Dashboard + détails) --------- */
 function DashboardStack() {
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="DashboardHome" component={DashboardView} />
-      <Stack.Screen name="TrainingDetail" component={TrainingDetailView} />
-      <Stack.Screen name="RecipeDetail" component={RecipeDetailView} />
-    </Stack.Navigator>
-  );
+    return (
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="DashboardHome" component={DashboardView} />
+            <Stack.Screen name="TrainingDetail" component={TrainingDetailView} />
+            <Stack.Screen name="RecipeDetail" component={RecipeDetailView} />
+        </Stack.Navigator>
+    );
 }
 
 
@@ -173,6 +173,18 @@ function TrainingStack() {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="TrainingHome" component={TrainingView} />
             <Stack.Screen name="TrainingDetail" component={TrainingDetailView} />
+        </Stack.Navigator>
+    );
+}
+
+import EditProfileView from "../screens/EditProfileView";
+
+/* --------- Profile stack (Home + Edit) --------- */
+function ProfileStack() {
+    return (
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="ProfileHome" component={ProfileView} />
+            <Stack.Screen name="EditProfile" component={EditProfileView} />
         </Stack.Navigator>
     );
 }
@@ -205,12 +217,12 @@ export default function Nav() {
                 }}
             />
             <Tab.Screen
-                    name="Training"
-                    component={TrainingStack} 
-                    options={{
-                        tabBarIcon: ({ size }) => (<MaterialCommunityIcons name="dumbbell" size={size} />),
-                        tabBarLabel: 'Training',
-                    }}
+                name="Training"
+                component={TrainingStack}
+                options={{
+                    tabBarIcon: ({ size }) => (<MaterialCommunityIcons name="dumbbell" size={size} />),
+                    tabBarLabel: 'Training',
+                }}
             />
             <Tab.Screen
                 name="Diet"
@@ -222,7 +234,7 @@ export default function Nav() {
             />
             <Tab.Screen
                 name="Profile"
-                component={ProfileView}
+                component={ProfileStack}
                 options={{
                     tabBarIcon: ({ size }) => <Ionicons name="person-outline" size={size} />,
                     tabBarLabel: 'Profile',

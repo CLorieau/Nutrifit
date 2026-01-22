@@ -2,26 +2,35 @@
 import api from "./axiosInstance";
 
 /**
- * Récupère le planning réel depuis le serveur.
- * @param {number} userId - L'ID de l'utilisateur
+ * Récupère tout le calendrier (tous les jours).
+ */
+export const getAllPlanning = async () => {
+  try {
+    // Appel GET vers /calendar
+    const response = await api.get("/calendar");
+    return response.data;
+  } catch (error) {
+    console.error("Erreur API Calendrier (All) :", error);
+    // On renvoie une structure vide par défaut
+    return { repas: [], seances: [] };
+  }
+};
+
+/**
+ * Récupère le planning réel pour un jour spécifique.
+ * @param {number} userId - L'ID de l'utilisateur (ignoré car le token gère l'auth)
  * @param {string} dateStr - La date au format 'YYYY-MM-DD'
  */
 export const getPlanningByDate = async (userId, dateStr) => {
   try {
-    // Appel GET vers ta future route (ex: /api/calendrier/jour)
-    // Les paramètres sont envoyés dans l'URL: /api/calendrier/jour?userId=180001&date=2026-01-20
-    const response = await axiosInstance.get("/calendrier/jour", {
-      params: {
-        userId: userId,
-        date: dateStr,
-      },
-    });
+    // Appel GET vers /calendar/{jour}
+    const response = await api.get(`/calendar/${dateStr}`);
 
-    // On renvoie directement les données (axios met le json dans .data)
+    // On renvoie directement les données
     return response.data;
   } catch (error) {
-    console.error("Erreur API Calendrier :", error);
-    // En cas d'erreur, on peut renvoyer une structure vide pour ne pas faire planter l'app
-    return { repas: [], seances: [] };
+    console.error("Erreur API Calendrier (Day) :", error);
+    // En cas d'erreur, on renvoie une structure vide
+    return { jour: dateStr, repas: [], seances: [] };
   }
 };
