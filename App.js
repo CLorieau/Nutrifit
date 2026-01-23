@@ -14,6 +14,7 @@ import LoginScreenView from "./screens/LoginScreenView";
 import VerifyCodeScreenView from "./screens/VerifyCodeScreenView";
 import navview from "./screens/navview";
 import TrainingView from "./screens/trainingview";
+import TrainingDetailView from "./screens/trainingDetailView";
 import StartScreen from "./screens/StartScreenView";
 import GenderScreenView from "./screens/GenderScreenView";
 import AgeScreenView from "./screens/AgeScreenView";
@@ -27,6 +28,7 @@ import RecipeDetailView from "./screens/recipeDetailView";
 
 import AuthContext from "./AuthContext";
 import { ChatProvider } from "./ChatContext";
+import { PlayerProvider } from "./PlayerContext";
 import ChatModal from "./components/ChatModal";
 import api from "./api/axiosInstance";
 
@@ -155,49 +157,58 @@ export default function App() {
     <AuthContext.Provider value={authContext}>
       <SafeAreaProvider>
         <ChatProvider>
-          <NavigationContainer>
-            <Stack.Navigator screenOptions={{ headerShown: false }}>
-              {!token ? (
-                // 🔴 Utilisateur non connecté → Auth
-                <>
-                  <Stack.Screen name="Welcome" component={WelcomeScreenView} />
-                  <Stack.Screen name="SignUp" component={SignUpScreenView} />
-                  <Stack.Screen name="Login" component={LoginScreenView} />
-                  <Stack.Screen
-                    name="VerifyCode"
-                    component={VerifyCodeScreenView}
-                  />
-                </>
-              ) : !isProfileComplete ? (
-                // 🟡 Utilisateur connecté mais profil incomplet → Onboarding
-                <>
-                  <Stack.Screen name="Start" component={StartScreen} />
-                  <Stack.Screen name="Gender" component={GenderScreenView} />
-                  <Stack.Screen name="Age" component={AgeScreenView} />
-                  <Stack.Screen name="Height" component={HeightScreenView} />
-                  <Stack.Screen name="Weight" component={WeightScreenView} />
-                  <Stack.Screen name="Diet" component={DietScreenView} />
-                  <Stack.Screen name="Goal" component={GoalScreenView} />
-                  <Stack.Screen
-                    name="Equipment"
-                    component={EquipmentScreenView}
-                  />
-                </>
-              ) : (
-                // 🟢 Utilisateur connecté + profil complet → Dashboard
-                <>
-                  <Stack.Screen name="Nav" component={navview} />
-                  <Stack.Screen name="Training" component={TrainingView} />
-                  <Stack.Screen name="Favorites" component={FavorisView} />
-                  <Stack.Screen
-                    name="RecipeDetail"
-                    component={RecipeDetailView}
-                  />
-                </>
-              )}
-            </Stack.Navigator>
-          </NavigationContainer>
-          <ChatModal />
+          <PlayerProvider>
+            <NavigationContainer>
+              <Stack.Navigator screenOptions={{ headerShown: false }}>
+                {!token ? (
+                  // 🔴 Utilisateur non connecté → Auth
+                  <>
+                    <Stack.Screen
+                      name="Welcome"
+                      component={WelcomeScreenView}
+                    />
+                    <Stack.Screen name="SignUp" component={SignUpScreenView} />
+                    <Stack.Screen name="Login" component={LoginScreenView} />
+                    <Stack.Screen
+                      name="VerifyCode"
+                      component={VerifyCodeScreenView}
+                    />
+                  </>
+                ) : !isProfileComplete ? (
+                  // 🟡 Utilisateur connecté mais profil incomplet → Onboarding
+                  <>
+                    <Stack.Screen name="Start" component={StartScreen} />
+                    <Stack.Screen name="Gender" component={GenderScreenView} />
+                    <Stack.Screen name="Age" component={AgeScreenView} />
+                    <Stack.Screen name="Height" component={HeightScreenView} />
+                    <Stack.Screen name="Weight" component={WeightScreenView} />
+                    <Stack.Screen name="Diet" component={DietScreenView} />
+                    <Stack.Screen name="Goal" component={GoalScreenView} />
+                    <Stack.Screen
+                      name="Equipment"
+                      component={EquipmentScreenView}
+                    />
+                  </>
+                ) : (
+                  // 🟢 Utilisateur connecté + profil complet → Dashboard
+                  <>
+                    <Stack.Screen name="Nav" component={navview} />
+                    <Stack.Screen name="Training" component={TrainingView} />
+                    <Stack.Screen name="Favorites" component={FavorisView} />
+                    <Stack.Screen
+                      name="RecipeDetail"
+                      component={RecipeDetailView}
+                    />
+                    <Stack.Screen
+                      name="TrainingDetail"
+                      component={TrainingDetailView}
+                    />
+                  </>
+                )}
+              </Stack.Navigator>
+            </NavigationContainer>
+            <ChatModal />
+          </PlayerProvider>
         </ChatProvider>
       </SafeAreaProvider>
     </AuthContext.Provider>

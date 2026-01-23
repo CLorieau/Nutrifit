@@ -11,40 +11,174 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Progress from "react-native-progress";
 
 import { useChat } from "../ChatContext";
+import { usePlayer } from "../PlayerContext";
+import { getPlanningByDate } from "../api/calendrier";
+import { getRecette } from "../api/recettes";
+import { getExercice } from "../api/exercices";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function Dashboard({ navigation }) {
   const { openChat } = useChat();
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const { isPlaying, play, pause, progress } = usePlayer();
+  // const [progress, setProgress] = useState(0); // REMOVED local state
 
-  // Gestion de la progression automatique
-  useEffect(() => {
-    let interval;
-    if (isPlaying) {
-      interval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 1) {
-            clearInterval(interval);
-            setIsPlaying(false);
-            return 1;
+  const [todaysPlanning, setTodaysPlanning] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [closestTraining, setClosestTraining] = useState(null);
+
+  // KPIs
+  const [eatenCalories, setEatenCalories] = useState(0);
+  const [burnedCalories, setBurnedCalories] = useState(0);
+
+  // Fetch Data on Focus
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchData = async () => {
+        try {
+          setLoading(true);
+          const today = new Date();
+          const offset = today.getTimezoneOffset() * 60000;
+          const localISOTime = new Date(today - offset)
+            .toISOString()
+            .slice(0, 10);
+
+          const userId = 180001;
+          const basicData = await getPlanningByDate(userId, localISOTime);
+
+          // --- ENRICH DATA (Double Fetch) ---
+
+          // 1. Enrich Meals
+          const enrichedRepas = await Promise.all(
+            (basicData.repas || []).map(async (r) => {
+              if (r.id_recette) {
+                try {
+                  const recRes = await getRecette(r.id_recette);
+                  return { ...r, recette: recRes.data };
+                } catch (err) {
+                  return r;
+                }
+              }
+              return r;
+            }),
+          );
+
+          // 2. Enrich Workouts
+          const enrichedSeances = await Promise.all(
+            (basicData.seances || []).map(async (s) => {
+              if (s.id_exercice) {
+                try {
+                  const exoRes = await getExercice(s.id_exercice);
+                  return { ...s, exercice: exoRes.data };
+                } catch (err) {
+                  return s;
+                }
+              }
+              return s;
+            }),
+          );
+
+          const fullPlanning = {
+            ...basicData,
+            repas: enrichedRepas,
+            seances: enrichedSeances,
+          };
+          setTodaysPlanning(fullPlanning);
+
+          // --- KPI & UI LOGIC ---
+
+          // A. Closest Training
+          if (fullPlanning.seances.length > 0) {
+            setClosestTraining(fullPlanning.seances[0]);
+          } else {
+            setClosestTraining(null);
           }
-          return prev + 0.0025;
-        });
-      }, 50);
-    }
-    return () => clearInterval(interval);
-  }, [isPlaying]);
 
-  // Gestion du bouton play/pause/retry
+          // B. Eaten Calories (Time-based)
+          let eaten = 0;
+          const now = new Date();
+          const currentHour = now.getHours();
+          const currentMin = now.getMinutes();
+
+          const mealTimes = {
+            petit_dejeuner: { h: 8, m: 30 },
+            dejeuner: { h: 13, m: 30 },
+            collation: { h: 16, m: 15 },
+            diner: { h: 21, m: 0 },
+          };
+
+          const isPast = (mealTimeStr, category) => {
+            let h, m;
+            if (mealTimeStr) {
+              [h, m] = mealTimeStr.split(":").map(Number);
+            } else {
+              if (!mealTimes[category]) return false;
+              if (category === "petit_dejeuner") {
+                h = 8;
+                m = 0;
+              } else if (category === "dejeuner") {
+                h = 12;
+                m = 30;
+              } else if (category === "collation") {
+                h = 16;
+                m = 0;
+              } else if (category === "diner") {
+                h = 20;
+                m = 0;
+              } else return false;
+            }
+            if (currentHour > h) return true;
+            if (currentHour === h && currentMin >= m) return true;
+            return false;
+          };
+
+          if (fullPlanning.repas) {
+            fullPlanning.repas.forEach((r) => {
+              if (isPast(r.heure_debut, r.categorie)) {
+                eaten += r.recette?.calories || 0;
+              }
+            });
+          }
+          setEatenCalories(eaten);
+
+          // C. Burned Calories (AsyncStorage)
+          const dateKey = `workout_done_${localISOTime}`;
+          const isDone = await AsyncStorage.getItem(dateKey);
+          if (isDone === "true") {
+            let burned = 0;
+            if (fullPlanning.seances) {
+              fullPlanning.seances.forEach((s) => {
+                burned += s.exercice?.calories_brulees || 300;
+              });
+            }
+            setBurnedCalories(burned);
+          } else {
+            setBurnedCalories(0);
+          }
+        } catch (e) {
+          console.log("Error dashboard fetch", e);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchData();
+    }, []),
+  );
+
+  // Gestion du bouton play/pause
   const handlePlayPause = () => {
-    if (progress >= 1) {
-      setProgress(0);
-      setIsPlaying(true);
+    if (isPlaying) {
+      pause();
     } else {
-      setIsPlaying((prev) => !prev);
+      play();
+      // Navigation vers Training (avec autostart si besoin)
+      const params = { autoStart: true };
+      if (closestTraining?.id_exercice) {
+        params.exerciseId = closestTraining.id_exercice;
+      }
+      navigation.navigate("Training", params);
     }
-    // Navigation vers TrainingDetail
-    navigation.navigate("Dashboard", { screen: "TrainingDetail" });
   };
 
   return (
@@ -71,52 +205,73 @@ export default function Dashboard({ navigation }) {
           {/* TITRES */}
           <View>
             <Text style={styles.trainingTitle}>Today's activities :</Text>
-            <Text style={styles.trainingSubtitle}>Body Weight</Text>
+            {/* Utiliser le nom de l'exercice enrichi */}
+            <Text style={styles.trainingSubtitle}>
+              {closestTraining?.exercice?.nom_exercice || "Workout"}
+            </Text>
           </View>
 
           {/* INFOS + PLAY + BARRE */}
-          <View style={styles.infoContainer}>
-            {/* Bouton Play/Pause/Retry */}
-            <TouchableOpacity
-              onPress={handlePlayPause}
-              style={styles.playButton}
-            >
-              {progress >= 1 ? (
-                <Ionicons name="refresh" size={24} color="#fff" />
-              ) : isPlaying ? (
-                <Ionicons name="pause" size={24} color="#fff" />
-              ) : (
-                <Ionicons name="play" size={24} color="#fff" />
-              )}
-            </TouchableOpacity>
+          {closestTraining ? (
+            <View style={styles.infoContainer}>
+              <TouchableOpacity
+                onPress={handlePlayPause}
+                style={styles.playButton}
+              >
+                {isPlaying ? (
+                  <Ionicons name="pause" size={24} color="#fff" />
+                ) : (
+                  <Ionicons name="play" size={24} color="#fff" />
+                )}
+              </TouchableOpacity>
 
-            {/* Bloc des infos */}
-            <View style={{ flex: 1 }}>
-              <View style={styles.infoBottom}>
-                <View>
-                  <Text style={styles.trainingValue}>430 kcal</Text>
-                  <Text style={styles.trainingLabel}>Calories Burned</Text>
+              <View style={{ flex: 1 }}>
+                <View style={styles.infoBottom}>
+                  <View>
+                    <Text style={styles.trainingValue}>
+                      {burnedCalories > 0 ? burnedCalories : 300} kcal
+                    </Text>
+                    <Text style={styles.trainingLabel}>Est. Calories</Text>
+                  </View>
+
+                  <View style={{ alignItems: "flex-end" }}>
+                    <Text style={styles.trainingValue}>
+                      {closestTraining.duree || 60} min
+                    </Text>
+                    <Text style={styles.trainingLabel}>Time</Text>
+                  </View>
                 </View>
 
-                <View style={{ alignItems: "flex-end" }}>
-                  <Text style={styles.trainingValue}>01:30 hr</Text>
-                  <Text style={styles.trainingLabel}>Time</Text>
-                </View>
-              </View>
-
-              {/* Barre de progression */}
-              <View style={styles.progressWrapper}>
-                <View style={styles.progressBarBackground}>
-                  <View
-                    style={[
-                      styles.progressBarFill,
-                      { width: `${progress * 100}%` },
-                    ]}
-                  />
+                <View style={styles.progressWrapper}>
+                  <View style={styles.progressBarBackground}>
+                    <View
+                      style={[
+                        styles.progressBarFill,
+                        { width: `${progress * 100}%` },
+                      ]}
+                    />
+                  </View>
                 </View>
               </View>
             </View>
-          </View>
+          ) : (
+            <View
+              style={{
+                position: "absolute",
+                inset: 0,
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "rgba(0,0,0,0.6)",
+              }}
+            >
+              <Text style={{ color: "#fff", fontSize: 24, fontWeight: "bold" }}>
+                Rest Day
+              </Text>
+              <Text style={{ color: "#ccc", fontSize: 16 }}>
+                No training scheduled today
+              </Text>
+            </View>
+          )}
 
           {/* CERCLE WORKOUT */}
           <View style={styles.workoutCircle}>
@@ -133,67 +288,69 @@ export default function Dashboard({ navigation }) {
         <View style={styles.generalCard}>
           <View>
             <Text style={styles.infoText}>
-              Calories eaten <Text style={styles.infoSub}>1300/2200 kcal</Text>
+              Calories eaten{" "}
+              <Text style={styles.infoSub}>{eatenCalories}/2200 kcal</Text>
             </Text>
             <Text style={styles.infoText}>
-              Calories burned <Text style={styles.infoSub}>0/430 kcal</Text>
+              Calories burned{" "}
+              <Text style={styles.infoSub}>{burnedCalories}/430 kcal</Text>
             </Text>
           </View>
 
           <View style={styles.circleContainer}>
             <Progress.Circle
               size={100}
-              progress={(2200 - 1300) / 2200}
+              progress={Math.max(0, (2200 - eatenCalories) / 2200)}
               showsText={true}
               color="#A3FF3D"
               unfilledColor="#333"
               borderWidth={0}
               thickness={6}
-              formatText={() => "300"}
+              formatText={() => `${Math.max(0, 2200 - eatenCalories)}`}
             />
             <Text style={styles.remainingLabel}>Remaining</Text>
           </View>
         </View>
       </View>
 
-      {/* CARD 3 — MEALS */}
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Meals of the day</Text>
 
-        {["Breakfast", "Lunch", "Evening meal"].map((meal, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.mealCard}
-            onPress={() =>
-              navigation.navigate("Dashboard", { screen: "RecipeDetail" })
-            }
-          >
-            <Image
-              source={{
-                uri:
-                  index === 0
-                    ? "https://images.unsplash.com/photo-1528698827591-e19ccd7bc23d?q=80&w=1200"
-                    : index === 1
-                      ? "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=1200"
-                      : "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200",
-              }}
-              style={styles.mealImage}
-            />
-            <View style={styles.mealOverlay}>
-              <View>
-                <Text style={styles.mealTitle}>{meal}</Text>
-                <Text style={styles.mealInfo}>
-                  {index === 0
-                    ? "15:00 min • 650 kcal"
-                    : index === 1
-                      ? "01:15 hr • 1650 kcal"
-                      : "30 min • 900 kcal"}
-                </Text>
+        {todaysPlanning?.repas?.map((meal, index) => {
+          // 'meal' est enrichi avec 'recette'
+          const nom = meal.recette?.nom_recette || meal.categorie;
+          const calories = meal.recette?.calories || 0;
+          const imageUrl =
+            meal.recette?.image_url ||
+            "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800";
+
+          return (
+            <TouchableOpacity
+              key={index}
+              style={styles.mealCard}
+              onPress={() =>
+                // Navigation avec ID
+                navigation.navigate("RecipeDetail", {
+                  recipeId: meal.id_recette,
+                })
+              }
+            >
+              <Image source={{ uri: imageUrl }} style={styles.mealImage} />
+              <View style={styles.darkOverlay} />
+              <View style={styles.mealOverlay}>
+                <View>
+                  <Text style={styles.mealTitle} numberOfLines={1}>
+                    {nom}
+                  </Text>
+                  <Text style={styles.mealInfo}>
+                    {meal.heure_debut || "??:??"} • {calories} kcal
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={22} color="#fff" />
               </View>
-              <Ionicons name="search" size={22} color="#fff" />
-            </View>
-          </TouchableOpacity>
-        ))}
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </ScrollView>
   );
@@ -373,6 +530,11 @@ const styles = StyleSheet.create({
   mealImage: {
     width: "100%",
     height: 120,
+  },
+  darkOverlay: {
+    position: "absolute",
+    inset: 0,
+    backgroundColor: "rgba(0,0,0,0.35)",
   },
   mealOverlay: {
     position: "absolute",

@@ -8,12 +8,14 @@ import {
   useWindowDimensions,
   ScrollView,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 // IMPORT DE L'API FICTIVE
 import { getPlanningByDate } from "../api/calendrier";
+import { useNavigation } from "@react-navigation/native";
 
 /* ===== Réglages ===== */
 const LOCALE = "fr-FR";
@@ -113,6 +115,7 @@ function mapDatabaseToEvents(dbData) {
       details: r.recette ? `${r.recette.calories} kcal` : "",
       startMin: timeToMinutes(start),
       endMin: timeToMinutes(end),
+      recipeId: r.id_recette,
     });
   });
 
@@ -154,6 +157,8 @@ function mapDatabaseToEvents(dbData) {
         details: "Objectif forme",
         startMin: placedStart,
         endMin: placedEnd,
+        exerciseId: s.id_exercice, // Old fallback
+        seanceId: s.id_seance, // NEW: Session ID for full details
       });
     } else {
       // Pas de place trouvée -> on n'ajoute pas l'entraînement (ou on loggue)
@@ -170,6 +175,7 @@ export default function Calendar({
   onDateChange,
 }) {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
 
   // État local
   const [selected, setSelected] = useState(() => {
@@ -196,10 +202,10 @@ export default function Calendar({
 
         const userId = 180001; // ID Utilisateur en dur pour le test
 
-        const data = await getPlanningByDate(userId, localISOTime);
+        const basicData = await getPlanningByDate(userId, localISOTime);
 
         if (isMounted) {
-          const formattedEvents = mapDatabaseToEvents(data);
+          const formattedEvents = mapDatabaseToEvents(basicData);
           setEvents(formattedEvents);
         }
       } catch (error) {
@@ -337,8 +343,29 @@ export default function Calendar({
 
   function ActivityCard({ e }) {
     const isMeal = e.type === "meal";
+
+    // Handler navigation
+    const handlePress = () => {
+      if (isMeal) {
+        if (e.recipeId) {
+          navigation.navigate("RecipeDetail", { recipeId: e.recipeId });
+        }
+      } else if (e.type === "workout") {
+        if (e.seanceId) {
+          navigation.navigate("Training", { seanceId: e.seanceId });
+        } else if (e.exerciseId) {
+          // Pass as filterIds array to support list filtering in Training screen
+          navigation.navigate("Training", { filterIds: [e.exerciseId] });
+        } else {
+          // Fallback: navigate to training without filter (shows all)
+          navigation.navigate("Training");
+        }
+      }
+    };
+
     return (
-      <View
+      <TouchableOpacity
+        onPress={handlePress}
         style={{
           flex: 1,
           backgroundColor: isMeal ? "#EAFBD1" : "#F3F4F6",
@@ -365,7 +392,7 @@ export default function Calendar({
           </Text>
         </View>
         <Ionicons name="chevron-forward" size={20} />
-      </View>
+      </TouchableOpacity>
     );
   }
 

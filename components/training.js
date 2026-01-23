@@ -10,9 +10,12 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Progress from "react-native-progress";
-import { useNavigation } from "@react-navigation/native"; // ✅ pour naviguer
+import { useNavigation, useRoute } from "@react-navigation/native"; // ✅ pour naviguer
 import { useChat } from "../ChatContext";
 import { getExercices } from "../api/exercices";
+import { getSeance } from "../api/seances";
+import { usePlayer } from "../PlayerContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const parseMuscles = (muscles) => {
   if (!muscles) return "Muscles";
@@ -26,39 +29,88 @@ const parseMuscles = (muscles) => {
 export default function Training() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation(); // ✅ accès à la navigation
+  const route = useRoute();
   const { openChat } = useChat();
+  const { isPlaying, play, pause, progress, setTraining } = usePlayer();
 
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
+  // Auto-start if requested
+  useEffect(() => {
+    if (route.params?.autoStart) {
+      play();
+    }
+  }, [route.params?.autoStart]);
+
+  const filterIds = route.params?.filterIds; // Array of IDs if filtering
+  const seanceId = route.params?.seanceId; // Session ID if specific session
+
+  // Logic needed for completion?
+
+  // Logic needed for completion?
+  // If progress >= 1, save "Done".
+  useEffect(() => {
+    const checkCompletion = async () => {
+      if (progress >= 1) {
+        try {
+          const today = new Date();
+          const offset = today.getTimezoneOffset() * 60000;
+          const localISOTime = new Date(today - offset)
+            .toISOString()
+            .slice(0, 10);
+          await AsyncStorage.setItem(`workout_done_${localISOTime}`, "true");
+          console.log("Workout saved as done!");
+        } catch (e) {
+          console.log("Error saving workout", e);
+        }
+      }
+    };
+    checkCompletion();
+  }, [progress]);
+
+  // const [isPlaying, setIsPlaying] = useState(false); REMOVED
+  // const [progress, setProgress] = useState(0); REMOVED
   const workoutDone = 1;
   const workoutTotal = 2;
   const workoutRatio = workoutDone / workoutTotal;
 
   // --- Animation de la barre de progression ---
-  useEffect(() => {
-    let interval;
-    if (isPlaying) {
-      interval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 1) return 1;
-          return prev + 0.01;
-        });
-      }, 100);
-    } else {
-      clearInterval(interval);
-    }
-    return () => clearInterval(interval);
-  }, [isPlaying]);
+  // REMOVED local interval logic, handled in PlayerContext
 
   // --- Chargement des exercices depuis l'API ---
   useEffect(() => {
     const fetchExercises = async () => {
       try {
-        const response = await getExercices();
-        setExercises(response.data);
+        let data = [];
+
+        if (seanceId) {
+          // Fetch specific session details
+          const res = await getSeance(seanceId);
+          // res.data contains { id_seance, nom, exercices: [ { id_exercice, exercice: {...}, series, ... } ] }
+          // specific session details need to be merged?
+          // For the list, we mainly need the exercise info.
+          // We flat map to get the exercise objects
+          if (res.data.exercices) {
+            data = res.data.exercices.map((link) => ({
+              ...link.exercice,
+              // We can attach session specific details here if needed later
+              sessions_series: link.series,
+              sessions_reps: link.repetitions,
+              sessions_rest: link.temps_recuperation,
+            }));
+          }
+        } else {
+          const response = await getExercices();
+          data = response.data;
+          // If we have a filter, keep only those
+          if (filterIds && filterIds.length > 0) {
+            const setIds = new Set(filterIds);
+            data = data.filter((e) => setIds.has(e.id_exercice));
+          }
+        }
+
+        setExercises(data);
       } catch (error) {
         console.error("Erreur lors du chargement des exercices:", error);
       } finally {
@@ -67,12 +119,23 @@ export default function Training() {
     };
 
     fetchExercises();
-  }, []);
+  }, [filterIds, seanceId]);
 
   // --- Gestion des boutons Play/Pause/Restart ---
   const handlePress = () => {
-    // 👉 quand on clique sur play/pause, on va à TrainingDetail
-    navigation.navigate("TrainingDetail");
+    // 👉 quand on clique sur play/pause
+    if (isPlaying) {
+      pause();
+    } else {
+      if (progress >= 1) {
+        // Reset?
+        // reset(); // If we export reset logic.
+        // For now just play
+        play();
+      } else {
+        play();
+      }
+    }
   };
 
   const getIconName = () => {
@@ -86,7 +149,13 @@ export default function Training() {
       <View style={styles.headerContainer}>
         <View>
           <Text style={styles.title}>Today's activities :</Text>
-          <Text style={styles.subtitle}>Body Weight</Text>
+          <Text style={styles.subtitle}>
+            {seanceId
+              ? "Session details"
+              : filterIds
+                ? "Planned Session"
+                : "Body Weight"}
+          </Text>
         </View>
         <TouchableOpacity style={styles.addButton} onPress={openChat}>
           <Ionicons name="add" size={28} color="#000" />
@@ -177,14 +246,18 @@ export default function Training() {
         renderItem={({ item }) => (
           <TouchableOpacity
             onPress={() =>
-              navigation.navigate("TrainingDetail", { exerciseId: item.id_exercice })
+              navigation.navigate("TrainingDetail", {
+                exerciseId: item.id_exercice,
+              })
             } // ✅ clic sur un exercice
             activeOpacity={0.8}
           >
             <View style={styles.exerciseCard}>
               <Image
                 source={{
-                  uri: item.image_path || "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=150",
+                  uri:
+                    item.image_path ||
+                    "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=150",
                 }}
                 style={styles.exerciseImage}
               />
@@ -206,7 +279,11 @@ export default function Training() {
           </TouchableOpacity>
         )}
         ListEmptyComponent={
-          !loading && <Text style={{ textAlign: "center", marginTop: 20 }}>No exercises found.</Text>
+          !loading && (
+            <Text style={{ textAlign: "center", marginTop: 20 }}>
+              No exercises found.
+            </Text>
+          )
         }
       />
     </View>

@@ -1,17 +1,63 @@
 // components/recipeDetail.js
-import React, { useState, useMemo } from "react";
-import { View, Text, Image, ScrollView, Pressable } from "react-native";
+import React, { useState, useMemo, useEffect } from "react";
+import {
+  View,
+  Text,
+  Image,
+  ScrollView,
+  Pressable,
+  ActivityIndicator,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { addFavorites, deleteFavorites } from "../api/favoris";
 
 export default function RecipeDetail({ route, navigation }) {
   const insets = useSafeAreaInsets();
-  const { recipe } = route.params || {};
+  const { recipe, recipeId } = route.params || {};
 
+  const [currentRecipe, setCurrentRecipe] = useState(recipe || null);
+  const [loading, setLoading] = useState(!recipe && !!recipeId);
   const [liked, setLiked] = useState(recipe?.liked ?? false);
 
-  const toggleLike = () => {
+  useEffect(() => {
+    // If we have an ID but no object, fetch it
+    if (!currentRecipe && recipeId) {
+      const fetchRecipe = async () => {
+        try {
+          setLoading(true);
+          const { getRecette } = require("../api/recettes");
+          const res = await getRecette(recipeId);
+          setCurrentRecipe(res.data);
+          setLiked(res.data.liked ?? false);
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchRecipe();
+    }
+  }, [recipeId, currentRecipe]);
+
+  const toggleLike = async () => {
+    const id = currentRecipe?.id_recette || recipeId;
+    if (!id) return;
+
+    // Optimistic UI update
     setLiked((prev) => !prev);
+
+    try {
+      if (liked) {
+        await deleteFavorites(id);
+      } else {
+        await addFavorites(id);
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      // Revert if error
+      setLiked((prev) => !prev);
+    }
   };
 
   const handleBack = () => {
@@ -20,19 +66,23 @@ export default function RecipeDetail({ route, navigation }) {
 
   // Parse ingredients safely
   const ingredients = useMemo(() => {
-    if (!recipe?.ingredients) return [];
+    if (!currentRecipe?.ingredients) return [];
     try {
       // Check if it's already an object (if passed pre-parsed) or a string
-      return typeof recipe.ingredients === "string"
-        ? JSON.parse(recipe.ingredients)
-        : recipe.ingredients;
+      return typeof currentRecipe.ingredients === "string"
+        ? JSON.parse(currentRecipe.ingredients)
+        : currentRecipe.ingredients;
     } catch (error) {
       console.error("Error parsing ingredients:", error);
       return [];
     }
-  }, [recipe?.ingredients]);
+  }, [currentRecipe?.ingredients]);
 
-  if (!recipe) {
+  if (loading) {
+    return <ActivityIndicator style={{ marginTop: 50 }} />;
+  }
+
+  if (!currentRecipe) {
     return (
       <View
         style={{
@@ -69,7 +119,7 @@ export default function RecipeDetail({ route, navigation }) {
           <Ionicons name="chevron-back" size={26} color="#000" />
         </Pressable>
         <Text style={{ fontSize: 18, fontWeight: "600" }} numberOfLines={1}>
-          {recipe.title}
+          {currentRecipe.title || currentRecipe.nom_recette}
         </Text>
         <Pressable
           onPress={toggleLike}
@@ -105,7 +155,12 @@ export default function RecipeDetail({ route, navigation }) {
             }}
           >
             <Image
-              source={{ uri: recipe.image }}
+              source={{
+                uri:
+                  currentRecipe.image ||
+                  currentRecipe.image_url ||
+                  currentRecipe.image_path,
+              }}
               style={{ width: "100%", height: 260 }}
               resizeMode="cover"
             />
@@ -122,10 +177,10 @@ export default function RecipeDetail({ route, navigation }) {
             }}
           >
             <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
-              {recipe.title}
+              {currentRecipe.title || currentRecipe.nom_recette}
             </Text>
             <Text style={{ color: "#E5E7EB", fontSize: 12 }}>
-              {recipe.kcalPer100} kcal per 100g
+              {currentRecipe.kcalPer100 || currentRecipe.calories} kcal per 100g
             </Text>
             <Text style={{ color: "#E5E7EB", fontSize: 12 }}>
               20g protein | 5g fat | 10g carbs
