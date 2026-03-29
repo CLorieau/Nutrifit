@@ -14,6 +14,7 @@ import RecipeDetailView from "../screens/recipeDetailView";
 import TrainingView from "../screens/trainingview";
 import TrainingDetailView from "../screens/trainingDetailView";
 import DashboardView from "../screens/dashboardView";
+import SocialView from "../screens/socialView";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -230,6 +231,14 @@ export default function Nav() {
                 options={{
                     tabBarIcon: ({ size }) => <MaterialCommunityIcons name="silverware-fork-knife" size={size} />,
                     tabBarLabel: 'Diet',
+                }}
+            />
+            <Tab.Screen
+                name="Social"
+                component={SocialView}
+                options={{
+                    tabBarIcon: ({ size }) => <Ionicons name="people-outline" size={size} />,
+                    tabBarLabel: 'Social',
                 }}
             />
             <Tab.Screen
