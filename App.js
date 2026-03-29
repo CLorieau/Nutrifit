@@ -25,6 +25,8 @@ import GoalScreenView from "./screens/GoalScreenView";
 import EquipmentScreenView from "./screens/EquipmentScreenView";
 import FavorisView from "./screens/FavorisView";
 import RecipeDetailView from "./screens/recipeDetailView";
+import CommunityScreenView from "./screens/CommunityScreenView";
+import FriendProfileScreenView from "./screens/FriendProfileScreenView";
 
 import AuthContext from "./AuthContext";
 import { ChatProvider } from "./ChatContext";
@@ -202,6 +204,14 @@ export default function App() {
                     <Stack.Screen
                       name="TrainingDetail"
                       component={TrainingDetailView}
+                    />
+                    <Stack.Screen
+                      name="Community"
+                      component={CommunityScreenView}
+                    />
+                    <Stack.Screen
+                      name="FriendProfile"
+                      component={FriendProfileScreenView}
                     />
                   </>
                 )}

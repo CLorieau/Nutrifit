@@ -14,7 +14,6 @@ import RecipeDetailView from "../screens/recipeDetailView";
 import TrainingView from "../screens/trainingview";
 import TrainingDetailView from "../screens/trainingDetailView";
 import DashboardView from "../screens/dashboardView";
-import SocialView from "../screens/socialView";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -234,18 +233,32 @@ export default function Nav() {
                 }}
             />
             <Tab.Screen
-                name="Social"
-                component={SocialView}
-                options={{
-                    tabBarIcon: ({ size }) => <Ionicons name="people-outline" size={size} />,
-                    tabBarLabel: 'Social',
-                }}
-            />
-            <Tab.Screen
                 name="Profile"
                 component={ProfileStack}
                 options={{
-                    tabBarIcon: ({ size }) => <Ionicons name="person-outline" size={size} />,
+                    tabBarIcon: ({ size }) => {
+                        const hasPendingRequests = true; // Mock Notification
+                        return (
+                            <View style={{ position: "relative" }}>
+                                <Ionicons name="person-outline" size={size} />
+                                {hasPendingRequests && (
+                                    <View
+                                        style={{
+                                            position: "absolute",
+                                            top: -2,
+                                            right: -4,
+                                            width: 12,
+                                            height: 12,
+                                            borderRadius: 6,
+                                            backgroundColor: "#A3FF3D", // Vert fluo Nutrifit
+                                            borderWidth: 2,
+                                            borderColor: "#fff" // Pour le faire ressortir
+                                        }}
+                                    />
+                                )}
+                            </View>
+                        );
+                    },
                     tabBarLabel: 'Profile',
                 }}
             />

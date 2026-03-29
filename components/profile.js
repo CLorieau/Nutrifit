@@ -7,8 +7,12 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  ScrollView,
+  FlatList,
+  Image,
 } from "react-native";
 import { getProfile } from "../api/profileAPI";
+import { getSharedRecipes } from "../api/social";
 
 // Import de la bibliothèque d’icônes Ionicons (incluse avec Expo)
 import { Ionicons } from "@expo/vector-icons";
@@ -31,6 +35,9 @@ export default function Profile() {
 
   const [hasError, setHasError] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
+  const friendsCount = 12; // MOCK: fake friends count for UI
+  const [sharedRecipes, setSharedRecipes] = React.useState([]);
+
   const [userData, setUserData] = React.useState({
     prenom: "",
     nom: "",
@@ -46,6 +53,8 @@ export default function Profile() {
     try {
       const response = await getProfile();
       setUserData(response.data);
+      const sharedRes = await getSharedRecipes();
+      setSharedRecipes(sharedRes.data || []);
     } catch (error) {
       console.error("Error fetching profile:", error);
       setHasError(true);
@@ -120,7 +129,11 @@ export default function Profile() {
     : "Utilisateur";
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 20 }]}>
+    <ScrollView 
+      style={styles.container} 
+      contentContainerStyle={{ paddingTop: insets.top + 20, paddingBottom: 100 }}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.headerRow}>
         <Text style={styles.title}>Profil</Text>
         <TouchableOpacity
@@ -140,6 +153,16 @@ export default function Profile() {
           <Text style={styles.userDetails}>
             {userData.age} yo {userData.objectif || "Aucun"}
           </Text>
+          
+          <TouchableOpacity 
+            style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}
+            onPress={() => navigation.navigate("Community")}
+          >
+            <Text style={{ color: '#888', fontSize: 13, fontWeight: '500' }}>
+               {friendsCount} Amis
+            </Text>
+            <Ionicons name="chevron-forward" size={14} color="#888" style={{ marginLeft: 2, marginTop: 1 }} />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.progressContainer}>
@@ -168,7 +191,53 @@ export default function Profile() {
         <Text style={styles.goalLine}>Poids: {userData.poids_kg} kg</Text>
       </View>
 
+      <View style={{ marginTop: 24 }}>
+        <Text style={[styles.sectionTitle, { color: '#000' }]}>Partagées avec vous</Text>
+        {sharedRecipes.length > 0 ? (
+          <FlatList 
+            horizontal
+            data={sharedRecipes}
+            keyExtractor={it => it.id.toString()}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingRight: 20, marginTop: 12 }}
+            renderItem={({ item }) => (
+              <TouchableOpacity 
+                 activeOpacity={0.8}
+                 style={styles.sharedRecipeCard}
+                 onPress={() => navigation.navigate("RecipeDetail", { recipe: { ...item, nom_recette: item.title } })}
+              >
+                  <Image source={{ uri: item.image }} style={styles.sharedRecipeImage} />
+                  <View style={styles.sharedRecipeOverlay}>
+                     <Text style={styles.sharedRecipeTitle} numberOfLines={2}>{item.title}</Text>
+                  </View>
+                  <TouchableOpacity 
+                     activeOpacity={0.8}
+                     style={styles.sharedSenderBubble}
+                     onPress={(e) => {
+                        navigation.navigate("FriendProfile", { user: item.sender });
+                     }}
+                     hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                  >
+                     <Image source={{ uri: item.sender.path_pp }} style={styles.sharedSenderAvatar} />
+                  </TouchableOpacity>
+              </TouchableOpacity>
+            )}
+          />
+        ) : (
+          <Text style={{ color: '#888', marginTop: 12 }}>Aucune recette reçue.</Text>
+        )}
+      </View>
+
       <View style={styles.bottomCard}>
+        <TouchableOpacity
+          style={styles.optionButton}
+          onPress={() => navigation.navigate("Community")}
+        >
+          <Text style={styles.optionText}>Mes Amis</Text>
+        </TouchableOpacity>
+
+        <View style={styles.separator} />
+
         <TouchableOpacity
           style={styles.optionButton}
           onPress={() => navigation.navigate("Favorites")}
@@ -183,7 +252,7 @@ export default function Profile() {
           <Text style={styles.optionText}>Déconnexion</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -293,5 +362,44 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "#555",
     marginHorizontal: 20,
+  },
+  sharedRecipeCard: {
+    width: 180,
+    height: 120,
+    marginRight: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#333',
+  },
+  sharedRecipeImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+  },
+  sharedRecipeOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+    padding: 12,
+  },
+  sharedRecipeTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  sharedSenderBubble: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#000',
+    overflow: 'hidden',
+  },
+  sharedSenderAvatar: {
+    width: '100%',
+    height: '100%',
   },
 });

@@ -7,10 +7,17 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
+  Modal,
+  FlatList,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+  StyleSheet
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { addFavorites, deleteFavorites } from "../api/favoris";
+import { getFriends } from "../api/social";
 
 export default function RecipeDetail({ route, navigation }) {
   const insets = useSafeAreaInsets();
@@ -63,6 +70,34 @@ export default function RecipeDetail({ route, navigation }) {
   const handleBack = () => {
     navigation.goBack();
   };
+
+  // --- Share Modal State ---
+  const [shareVisible, setShareVisible] = useState(false);
+  const [friends, setFriends] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFriends, setSelectedFriends] = useState([]);
+
+  useEffect(() => {
+    if (shareVisible && friends.length === 0) {
+      getFriends().then(res => setFriends(res.data || [])).catch(console.error);
+    }
+  }, [shareVisible, friends.length]);
+
+  const handleToggleFriend = (id) => {
+    setSelectedFriends(prev => 
+      prev.includes(id) ? prev.filter(fId => fId !== id) : [...prev, id]
+    );
+  };
+
+  const handleShare = () => {
+    Alert.alert("Succès", `Recette partagée avec succès à ${selectedFriends.length} ami(s) !`);
+    setShareVisible(false);
+    setSelectedFriends([]);
+  };
+
+  const filteredFriends = friends.filter(f => 
+    `${f.prenom} ${f.nom}`.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   // Parse ingredients safely
   const ingredients = useMemo(() => {
@@ -118,9 +153,23 @@ export default function RecipeDetail({ route, navigation }) {
         <Pressable onPress={handleBack} hitSlop={10}>
           <Ionicons name="chevron-back" size={26} color="#000" />
         </Pressable>
-        <Text style={{ fontSize: 18, fontWeight: "600" }} numberOfLines={1}>
+        <Text style={{ fontSize: 18, fontWeight: "600", flex: 1, textAlign: 'center' }} numberOfLines={1}>
           {currentRecipe.title || currentRecipe.nom_recette}
         </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Pressable
+            onPress={() => setShareVisible(true)}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: 4
+            }}
+          >
+            <Ionicons name="paper-plane-outline" size={24} color="#000" />
+          </Pressable>
         <Pressable
           onPress={toggleLike}
           style={{
@@ -137,6 +186,7 @@ export default function RecipeDetail({ route, navigation }) {
             color={liked ? "red" : "#000"}
           />
         </Pressable>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
@@ -252,6 +302,161 @@ export default function RecipeDetail({ route, navigation }) {
           )}
         </View>
       </ScrollView>
+
+      {/* MODAL DE PARTAGE */}
+      <Modal visible={shareVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+            <View style={styles.bottomSheet}>
+                <View style={styles.sheetHeader}>
+                    <Text style={styles.sheetTitle}>Partager cette recette</Text>
+                    <TouchableOpacity onPress={() => setShareVisible(false)}>
+                        <Ionicons name="close-circle-outline" size={28} color="#888" />
+                    </TouchableOpacity>
+                </View>
+
+                <View style={styles.searchBar}>
+                   <Ionicons name="search" size={18} color="#888" style={{marginRight:8}} />
+                   <TextInput 
+                      style={styles.searchInput}
+                      placeholder="Rechercher un ami..."
+                      placeholderTextColor="#888"
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                   />
+                </View>
+
+                <FlatList 
+                   data={filteredFriends}
+                   keyExtractor={item => item.id_utilisateur.toString()}
+                   showsVerticalScrollIndicator={false}
+                   renderItem={({item}) => {
+                     const isSelected = selectedFriends.includes(item.id_utilisateur);
+                     return (
+                       <TouchableOpacity style={styles.friendRow} onPress={() => handleToggleFriend(item.id_utilisateur)}>
+                          <Image source={{uri: item.path_pp}} style={styles.friendAvatar} />
+                          <Text style={styles.friendName}>{item.prenom} {item.nom}</Text>
+                          <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                              {isSelected && <Ionicons name="checkmark" size={14} color="#000" />}
+                          </View>
+                       </TouchableOpacity>
+                     )
+                   }}
+                   contentContainerStyle={{ paddingBottom: 100 }}
+                   ListEmptyComponent={<Text style={styles.emptyText}>Aucun ami trouvé.</Text>}
+                />
+
+                {selectedFriends.length > 0 && (
+                  <View style={styles.floatingActionContainer}>
+                    <TouchableOpacity style={styles.shareActionBtn} onPress={handleShare}>
+                        <Text style={styles.shareActionBtnText}>Partager à {selectedFriends.length} ami(s)</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+            </View>
+        </View>
+      </Modal>
+
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  bottomSheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    height: '75%',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sheetTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#000',
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F7',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#000',
+  },
+  friendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  friendAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#333',
+  },
+  friendName: {
+    flex: 1,
+    marginLeft: 14,
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#000',
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#CCC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxSelected: {
+    backgroundColor: '#A3FF3D',
+    borderColor: '#A3FF3D',
+  },
+  floatingActionContainer: {
+    position: 'absolute',
+    bottom: 30,
+    left: 20,
+    right: 20,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: -2 },
+  },
+  shareActionBtn: {
+    backgroundColor: '#A3FF3D',
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  shareActionBtnText: {
+    color: '#000',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#888',
+    marginTop: 20,
+  }
+});
