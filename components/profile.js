@@ -12,7 +12,7 @@ import {
   Image,
 } from "react-native";
 import { getProfile } from "../api/profileAPI";
-import { getSharedRecipes } from "../api/social";
+import { getSharedRecipes, getSocialStats } from "../api/social";
 
 // Import de la bibliothèque d’icônes Ionicons (incluse avec Expo)
 import { Ionicons } from "@expo/vector-icons";
@@ -35,7 +35,7 @@ export default function Profile() {
 
   const [hasError, setHasError] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
-  const friendsCount = 12; // MOCK: fake friends count for UI
+  const [friendsCount, setFriendsCount] = React.useState(0);
   const [sharedRecipes, setSharedRecipes] = React.useState([]);
 
   const [userData, setUserData] = React.useState({
@@ -55,6 +55,15 @@ export default function Profile() {
       setUserData(response.data);
       const sharedRes = await getSharedRecipes();
       setSharedRecipes(sharedRes.data || []);
+      
+      if (response.data?.id_utilisateur) {
+          try {
+              const statsRes = await getSocialStats(response.data.id_utilisateur);
+              setFriendsCount(statsRes.data?.friends_count || 0);
+          } catch (e) {
+              console.log("Error fetching stats:", e);
+          }
+      }
     } catch (error) {
       console.error("Error fetching profile:", error);
       setHasError(true);
@@ -204,11 +213,11 @@ export default function Profile() {
               <TouchableOpacity 
                  activeOpacity={0.8}
                  style={styles.sharedRecipeCard}
-                 onPress={() => navigation.navigate("RecipeDetail", { recipe: { ...item, nom_recette: item.title } })}
+                 onPress={() => navigation.navigate("RecipeDetail", { recipe: item.recette })}
               >
-                  <Image source={{ uri: item.image }} style={styles.sharedRecipeImage} />
+                  <Image source={{ uri: item.recette?.image_url }} style={styles.sharedRecipeImage} />
                   <View style={styles.sharedRecipeOverlay}>
-                     <Text style={styles.sharedRecipeTitle} numberOfLines={2}>{item.title}</Text>
+                     <Text style={styles.sharedRecipeTitle} numberOfLines={2}>{item.recette?.nom_recette}</Text>
                   </View>
                   <TouchableOpacity 
                      activeOpacity={0.8}
@@ -218,7 +227,7 @@ export default function Profile() {
                      }}
                      hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
                   >
-                     <Image source={{ uri: item.sender.path_pp }} style={styles.sharedSenderAvatar} />
+                     <Image source={{ uri: item.sender?.path_pp }} style={styles.sharedSenderAvatar} />
                   </TouchableOpacity>
               </TouchableOpacity>
             )}

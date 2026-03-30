@@ -17,7 +17,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { addFavorites, deleteFavorites } from "../api/favoris";
-import { getFriends } from "../api/social";
+import { getFriends, shareRecipe } from "../api/social";
 
 export default function RecipeDetail({ route, navigation }) {
   const insets = useSafeAreaInsets();
@@ -89,10 +89,28 @@ export default function RecipeDetail({ route, navigation }) {
     );
   };
 
-  const handleShare = () => {
-    Alert.alert("Succès", `Recette partagée avec succès à ${selectedFriends.length} ami(s) !`);
-    setShareVisible(false);
-    setSelectedFriends([]);
+  const handleShare = async () => {
+    if (selectedFriends.length === 0) return;
+    try {
+      const p_id = currentRecipe?.id_recette || currentRecipe?.id || recipeId;
+      if (!p_id) {
+          Alert.alert("Erreur", "L'identifiant de la recette est introuvable.");
+          return;
+      }
+      
+      await shareRecipe(p_id, selectedFriends);
+      Alert.alert("Succès", `Recette partagée avec succès à ${selectedFriends.length} ami(s) !`);
+      setShareVisible(false);
+      setSelectedFriends([]);
+    } catch (error) {
+      console.error("Erreur lors du partage :", error.response?.data || error.message);
+      
+      const errorMsg = error.response?.data 
+        ? JSON.stringify(error.response.data) 
+        : "Impossible de partager la recette.";
+        
+      Alert.alert("Erreur API", errorMsg);
+    }
   };
 
   const filteredFriends = friends.filter(f => 

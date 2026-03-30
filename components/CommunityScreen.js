@@ -120,7 +120,12 @@ export default function CommunityScreen() {
     try {
        const [friendsRes, requestsRes] = await Promise.all([getFriends(), getPendingRequests()]);
        setFriends(friendsRes.data || []);
-       setRequests(requestsRes.data || []);
+       
+       const formattedRequests = (requestsRes.data || []).map(req => ({
+           ...req.ami,
+           request_id: req.id
+       }));
+       setRequests(formattedRequests);
     } catch(e) {
        console.log("Erreur", e);
     } finally {
@@ -148,12 +153,12 @@ export default function CommunityScreen() {
   // -- Demandes actions
   const handleRequestAction = async (user, type) => {
       if(type === 'ACCEPT') {
-         await acceptFriendRequest(user.id_utilisateur);
+         await acceptFriendRequest(user.request_id);
          setFriends(prev => [...prev, user]);
-         setRequests(prev => prev.filter(u => u.id_utilisateur !== user.id_utilisateur));
+         setRequests(prev => prev.filter(u => u.request_id !== user.request_id));
       } else {
-         await rejectFriendRequest(user.id_utilisateur);
-         setRequests(prev => prev.filter(u => u.id_utilisateur !== user.id_utilisateur));
+         await rejectFriendRequest(user.request_id);
+         setRequests(prev => prev.filter(u => u.request_id !== user.request_id));
       }
   };
 

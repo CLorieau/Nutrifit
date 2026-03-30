@@ -4,12 +4,41 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Progress from 'react-native-progress';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { getFriendProfile, getSharedRecipes } from '../api/social';
 
 export default function FriendProfileScreen() {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation();
     const route = useRoute();
     const { user } = route.params || {};
+
+    const [profile, setProfile] = React.useState(null);
+    const [sharedWithMe, setSharedWithMe] = React.useState([]);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        if (user && user.id_utilisateur) {
+            const fetchData = async () => {
+                setLoading(true);
+                try {
+                    const [profRes, sharedRes] = await Promise.all([
+                        getFriendProfile(user.id_utilisateur),
+                        getSharedRecipes()
+                    ]);
+                    setProfile(profRes.data);
+                    
+                    const allShared = sharedRes.data || [];
+                    const fromThisFriend = allShared.filter(it => it.sender_id === user.id_utilisateur || it.sender?.id_utilisateur === user.id_utilisateur);
+                    setSharedWithMe(fromThisFriend);
+                } catch (error) {
+                    console.error("Error fetching friend profile:", error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            fetchData();
+        }
+    }, [user]);
 
     if (!user) {
         return (
@@ -19,19 +48,18 @@ export default function FriendProfileScreen() {
         );
     }
 
-    // Valeurs par défaut pour prévenir un mock incomplet
-    const age = user.age || 25;
-    const objectif = user.objectif || 'Rester en forme';
-    const recipes = user.recipes || [];
-    const programs = user.programs || [];
+    const age = profile?.age || 25;
+    const objectif = profile?.objectif || 'Rester en forme';
+    const recipes = profile?.recettes_favorites || [];
+    const programs = profile?.programmes_actifs || [];
 
     const renderRecipeItem = ({ item }) => (
         <View style={styles.recipeCard}>
-            <Image source={{ uri: item.image }} style={styles.recipeImage} />
-            <Text style={styles.recipeTitle} numberOfLines={1}>{item.title}</Text>
+            <Image source={{ uri: item.image_url || item.image }} style={styles.recipeImage} />
+            <Text style={styles.recipeTitle} numberOfLines={1}>{item.nom_recette || item.title}</Text>
             <TouchableOpacity 
                 style={styles.recipeBtn}
-                onPress={() => navigation.navigate('RecipeDetail', { recipe: { ...item, nom_recette: item.title } })}
+                onPress={() => navigation.navigate('RecipeDetail', { recipe: item })}
             >
                 <Text style={styles.recipeBtnText}>Voir la recette</Text>
             </TouchableOpacity>
@@ -102,13 +130,39 @@ export default function FriendProfileScreen() {
                 <FlatList
                     horizontal
                     data={recipes}
-                    keyExtractor={(it) => it.id.toString()}
+                    keyExtractor={(it) => it.id_recette?.toString() || it.id?.toString() || Math.random().toString()}
                     renderItem={renderRecipeItem}
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={{ paddingLeft: 20, paddingRight: 10, paddingBottom: 20 }}
                 />
             ) : (
-                <Text style={styles.emptyText}>Aucune recette favorite partagée.</Text>
+                <Text style={styles.emptyText}>{user.prenom || user.nom} n'a aucune recette favorite.</Text>
+            )}
+
+            {/* Section: Partagées avec vous */}
+            <Text style={styles.sectionTitle}>Partagées avec vous</Text>
+            {sharedWithMe.length > 0 ? (
+                <FlatList
+                    horizontal
+                    data={sharedWithMe}
+                    keyExtractor={(it) => it.id.toString()}
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingLeft: 20, paddingRight: 10, paddingBottom: 20 }}
+                    renderItem={({ item }) => (
+                        <View style={styles.recipeCard}>
+                            <Image source={{ uri: item.recette?.image_url }} style={styles.recipeImage} />
+                            <Text style={styles.recipeTitle} numberOfLines={1}>{item.recette?.nom_recette}</Text>
+                            <TouchableOpacity 
+                                style={styles.recipeBtn}
+                                onPress={() => navigation.navigate('RecipeDetail', { recipe: item.recette })}
+                            >
+                                <Text style={styles.recipeBtnText}>Voir la recette</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                />
+            ) : (
+                <Text style={styles.emptyText}>{user.prenom || user.nom} ne vous a partagé aucune recette.</Text>
             )}
         </ScrollView>
     );
