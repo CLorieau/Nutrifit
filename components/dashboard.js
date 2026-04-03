@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import {
   View,
   Text,
@@ -6,8 +6,9 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
+  Animated,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Progress from "react-native-progress";
 
 import { useChat } from "../ChatContext";
@@ -17,11 +18,14 @@ import { getRecette } from "../api/recettes";
 import { getExercice } from "../api/exercices";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import AuthContext from "../AuthContext";
 
 export default function Dashboard({ navigation }) {
+  const insets = useSafeAreaInsets();
   const { openChat } = useChat();
   const { isPlaying, play, pause, progress } = usePlayer();
-  // const [progress, setProgress] = useState(0); // REMOVED local state
+  const { user } = useContext(AuthContext);
 
   const [todaysPlanning, setTodaysPlanning] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -30,6 +34,38 @@ export default function Dashboard({ navigation }) {
   // KPIs
   const [eatenCalories, setEatenCalories] = useState(0);
   const [burnedCalories, setBurnedCalories] = useState(0);
+  const [workoutStats, setWorkoutStats] = useState({ done: 0, total: 0 });
+  const [allMealsChecked, setAllMealsChecked] = useState(false);
+  const [showGreeting, setShowGreeting] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  // Greeting : show only on first daily open, with fade-out transition
+  useEffect(() => {
+    const checkGreeting = async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const lastSeen = await AsyncStorage.getItem("last_seen_date");
+      if (lastSeen !== today) {
+        setShowGreeting(true);
+        await AsyncStorage.setItem("last_seen_date", today);
+        // After 3s, fade out greeting and fade in logo
+        setTimeout(() => {
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 600,
+            useNativeDriver: true,
+          }).start(() => {
+            setShowGreeting(false);
+            Animated.timing(fadeAnim, {
+              toValue: 1,
+              duration: 500,
+              useNativeDriver: true,
+            }).start();
+          });
+        }, 3000);
+      }
+    };
+    checkGreeting();
+  }, []);
 
   // Fetch Data on Focus
   useFocusEffect(
@@ -94,56 +130,42 @@ export default function Dashboard({ navigation }) {
             setClosestTraining(null);
           }
 
-          // B. Eaten Calories (Time-based)
+          // B. Eaten Calories (AsyncStorage checked meals)
           let eaten = 0;
-          const now = new Date();
-          const currentHour = now.getHours();
-          const currentMin = now.getMinutes();
-
-          const mealTimes = {
-            petit_dejeuner: { h: 8, m: 30 },
-            dejeuner: { h: 13, m: 30 },
-            collation: { h: 16, m: 15 },
-            diner: { h: 21, m: 0 },
-          };
-
-          const isPast = (mealTimeStr, category) => {
-            let h, m;
-            if (mealTimeStr) {
-              [h, m] = mealTimeStr.split(":").map(Number);
-            } else {
-              if (!mealTimes[category]) return false;
-              if (category === "petit_dejeuner") {
-                h = 8;
-                m = 0;
-              } else if (category === "dejeuner") {
-                h = 12;
-                m = 30;
-              } else if (category === "collation") {
-                h = 16;
-                m = 0;
-              } else if (category === "diner") {
-                h = 20;
-                m = 0;
-              } else return false;
-            }
-            if (currentHour > h) return true;
-            if (currentHour === h && currentMin >= m) return true;
-            return false;
-          };
-
           if (fullPlanning.repas) {
-            fullPlanning.repas.forEach((r) => {
-              if (isPast(r.heure_debut, r.categorie)) {
+            for (const r of fullPlanning.repas) {
+              const key = `meal_done_${localISOTime}_${r.categorie}_${r.id_recette || "none"}`;
+              const val = await AsyncStorage.getItem(key);
+              if (val === "true") {
                 eaten += r.recette?.calories || 0;
               }
-            });
+            }
           }
           setEatenCalories(eaten);
+
+          // Check si tous les repas ont été validés
+          const totalMeals = fullPlanning.repas?.length || 0;
+          let checkedCount = 0;
+          if (fullPlanning.repas) {
+            for (const r of fullPlanning.repas) {
+              const key = `meal_done_${localISOTime}_${r.categorie}_${r.id_recette || "none"}`;
+              const val = await AsyncStorage.getItem(key);
+              if (val === "true") checkedCount++;
+            }
+          }
+          setAllMealsChecked(totalMeals > 0 && checkedCount === totalMeals);
 
           // C. Burned Calories (AsyncStorage)
           const dateKey = `workout_done_${localISOTime}`;
           const isDone = await AsyncStorage.getItem(dateKey);
+
+          let totalW = 0;
+          if (fullPlanning.seances) {
+            totalW = fullPlanning.seances.length;
+          }
+          let doneW = isDone === "true" && totalW > 0 ? 1 : 0;
+          setWorkoutStats({ done: doneW, total: totalW });
+
           if (isDone === "true") {
             let burned = 0;
             if (fullPlanning.seances) {
@@ -177,180 +199,360 @@ export default function Dashboard({ navigation }) {
       if (closestTraining?.id_exercice) {
         params.exerciseId = closestTraining.id_exercice;
       }
+    }
+  };
+
+  const openSessionDetails = () => {
+    if (!closestTraining) return;
+    const params = {};
+    if (closestTraining.id_seance) {
+      params.seanceId = closestTraining.id_seance;
+    } else if (closestTraining.id_exercice) {
+      params.filterIds = [closestTraining.id_exercice];
+    }
+    if (Object.keys(params).length > 0) {
       navigation.navigate("Training", params);
     }
+  };
+
+  // Helpers
+  const todayLabel = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+  const firstName = user?.prenom || user?.nom || "";
+
+  // Couleur par catégorie de repas
+  const categoryColor = {
+    petit_dejeuner: "#FBBF24",
+    dejeuner: "#34D399",
+    collation: "#818CF8",
+    diner: "#F87171",
+  };
+  const categoryIcon = {
+    petit_dejeuner: "coffee",
+    dejeuner: "silverware-fork-knife",
+    collation: "apple",
+    diner: "moon-waning-crescent",
   };
 
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingBottom: 100 }}
+      contentContainerStyle={{
+        paddingTop: insets.top + 20,
+        paddingBottom: 110,
+      }}
       showsVerticalScrollIndicator={false}
     >
-      {/* HEADER */}
+      {/* HEADER — Greeting or Logo with fade transition */}
       <View style={styles.header}>
-        <Image source={require("../assets/logo.png")} style={styles.logo} />
+        <Animated.View
+          style={{
+            flex: 1,
+            opacity: fadeAnim,
+            height: 50,
+            justifyContent: "center",
+          }}
+        >
+          {showGreeting && firstName ? (
+            <View style={{ height: 50, justifyContent: "center" }}>
+              <Text style={styles.greetingText}>Hello, {firstName} 👋</Text>
+              <Text style={styles.greetingDate}>{todayLabel}</Text>
+            </View>
+          ) : (
+            <Image source={require("../assets/logo.png")} style={styles.logo} />
+          )}
+        </Animated.View>
         <TouchableOpacity style={styles.addButton} onPress={openChat}>
           <Ionicons name="add" size={26} color="#fff" />
         </TouchableOpacity>
       </View>
 
-      {/* CARD 1 — TRAINING */}
-      <View style={styles.trainingCard}>
-        <Image
-          source={require("../assets/welcome_page_pic.jpg")}
-          style={styles.trainingImage}
-        />
-        <View style={styles.overlay}>
-          {/* TITRES */}
-          <View>
-            <Text style={styles.trainingTitle}>Today's activities :</Text>
-            {/* Utiliser le nom de l'exercice enrichi */}
-            <Text style={styles.trainingSubtitle}>
-              {closestTraining?.exercice?.nom_exercice || "Workout"}
-            </Text>
-          </View>
+      {/* CARD 1 — WORKOUT */}
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>Workout</Text>
 
-          {/* INFOS + PLAY + BARRE */}
-          {closestTraining ? (
-            <View style={styles.infoContainer}>
-              <TouchableOpacity
-                onPress={handlePlayPause}
-                style={styles.playButton}
+        {closestTraining ? (
+          <View style={styles.trainingCard}>
+            {/* Badge + titre */}
+            <View style={styles.tcHeader}>
+              <View style={styles.tcBadge}>
+                <Text style={styles.tcBadgeText}>TODAY</Text>
+              </View>
+              <View
+                style={[
+                  styles.tcWorkoutPill,
+                  {
+                    backgroundColor:
+                      workoutStats.done > 0
+                        ? "rgba(163,255,61,0.12)"
+                        : "rgba(255,255,255,0.06)",
+                  },
+                ]}
               >
-                {isPlaying ? (
-                  <Ionicons name="pause" size={24} color="#fff" />
-                ) : (
-                  <Ionicons name="play" size={24} color="#fff" />
-                )}
-              </TouchableOpacity>
-
-              <View style={{ flex: 1 }}>
-                <View style={styles.infoBottom}>
-                  <View>
-                    <Text style={styles.trainingValue}>
-                      {burnedCalories > 0 ? burnedCalories : 300} kcal
-                    </Text>
-                    <Text style={styles.trainingLabel}>Est. Calories</Text>
-                  </View>
-
-                  <View style={{ alignItems: "flex-end" }}>
-                    <Text style={styles.trainingValue}>
-                      {closestTraining.duree || 60} min
-                    </Text>
-                    <Text style={styles.trainingLabel}>Time</Text>
-                  </View>
-                </View>
-
-                <View style={styles.progressWrapper}>
-                  <View style={styles.progressBarBackground}>
-                    <View
-                      style={[
-                        styles.progressBarFill,
-                        { width: `${progress * 100}%` },
-                      ]}
-                    />
-                  </View>
-                </View>
+                <Text
+                  style={[
+                    styles.tcWorkoutPillText,
+                    { color: workoutStats.done > 0 ? "#A3FF3D" : "#666" },
+                  ]}
+                >
+                  {workoutStats.done}/{workoutStats.total} séance
+                  {workoutStats.total > 1 ? "s" : ""}
+                </Text>
               </View>
             </View>
-          ) : (
-            <View
-              style={{
-                position: "absolute",
-                inset: 0,
-                justifyContent: "center",
-                alignItems: "center",
-                backgroundColor: "rgba(0,0,0,0.6)",
+
+            <Text style={styles.tcTitle} numberOfLines={1}>
+              {closestTraining?.exercice?.nom_exercice ||
+                closestTraining?.nom ||
+                "Today's workout"}
+            </Text>
+
+            {/* Métriques */}
+            <View style={styles.tcMetrics}>
+              <View style={styles.tcMetricItem}>
+                <MaterialCommunityIcons name="fire" size={16} color="#FF6432" />
+                <Text style={styles.tcMetricValue}>
+                  {burnedCalories > 0 ? burnedCalories : 300}
+                </Text>
+                <Text style={styles.tcMetricLabel}>kcal</Text>
+              </View>
+              <View style={styles.tcMetricDivider} />
+              <View style={styles.tcMetricItem}>
+                <MaterialCommunityIcons
+                  name="clock-outline"
+                  size={16}
+                  color="#9CA3AF"
+                />
+                <Text style={styles.tcMetricValue}>
+                  {closestTraining.duree || 45}
+                </Text>
+                <Text style={styles.tcMetricLabel}>min</Text>
+              </View>
+              <View style={styles.tcMetricDivider} />
+              <View style={styles.tcMetricItem}>
+                <MaterialCommunityIcons
+                  name="dumbbell"
+                  size={16}
+                  color="#9CA3AF"
+                />
+                <Text style={styles.tcMetricValue}>
+                  {closestTraining.nb_exercices || "—"}
+                </Text>
+                <Text style={styles.tcMetricLabel}>exercises</Text>
+              </View>
+            </View>
+
+            {/* Barre progression */}
+            {progress > 0 && (
+              <View style={styles.tcProgressBg}>
+                <View
+                  style={[
+                    styles.tcProgressFill,
+                    { width: `${progress * 100}%` },
+                  ]}
+                />
+              </View>
+            )}
+
+            {/* Bouton démarrer */}
+            <TouchableOpacity
+              style={styles.tcStartBtn}
+              activeOpacity={0.85}
+              onPress={() => {
+                if (closestTraining.id_seance) {
+                  navigation.navigate("Training", {
+                    seanceId: closestTraining.id_seance,
+                  });
+                } else {
+                  navigation.navigate("Training");
+                }
               }}
             >
-              <Text style={{ color: "#fff", fontSize: 24, fontWeight: "bold" }}>
-                Rest Day
+              <Ionicons
+                name={isPlaying ? "pause" : "play"}
+                size={18}
+                color="#000"
+              />
+              <Text style={styles.tcStartBtnText}>
+                {isPlaying ? "Pause" : "Start"}
               </Text>
-              <Text style={{ color: "#ccc", fontSize: 16 }}>
-                No training scheduled today
-              </Text>
-            </View>
-          )}
-
-          {/* CERCLE WORKOUT */}
-          <View style={styles.workoutCircle}>
-            <Text style={styles.workoutText}>1/2</Text>
-            <Text style={styles.workoutLabel}>Workout</Text>
+            </TouchableOpacity>
           </View>
-        </View>
+        ) : (
+          // Rest Day
+          <View style={[styles.trainingCard, styles.tcRestDay]}>
+            <Text style={{ fontSize: 40, marginBottom: 8 }}>💤</Text>
+            <Text style={styles.tcRestTitle}>Rest day</Text>
+            <Text style={styles.tcRestSub}>
+              No workout planned today. Take it easy!
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* CARD 2 — GENERAL VIEW */}
       <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle}>General view</Text>
+        <Text style={styles.sectionTitle}>General View</Text>
 
         <View style={styles.generalCard}>
-          <View>
-            <Text style={styles.infoText}>
-              Calories eaten{" "}
-              <Text style={styles.infoSub}>{eatenCalories}/2200 kcal</Text>
-            </Text>
-            <Text style={styles.infoText}>
-              Calories burned{" "}
-              <Text style={styles.infoSub}>{burnedCalories}/430 kcal</Text>
-            </Text>
+          {/* En-tête : Calories restantes */}
+          <View style={styles.gvHeader}>
+            <View>
+              <Text style={styles.gvRemaining}>
+                {Math.max(0, 2200 - eatenCalories)}
+                <Text style={styles.gvRemainingUnit}> kcal</Text>
+              </Text>
+              <Text style={styles.gvRemainingLabel}>remaining today</Text>
+            </View>
+            <View style={styles.gvBadge}>
+              <Text style={styles.gvBadgeText}>
+                {Math.round((eatenCalories / 2200) * 100)}%
+              </Text>
+            </View>
           </View>
 
-          <View style={styles.circleContainer}>
-            <Progress.Circle
-              size={100}
-              progress={Math.max(0, (2200 - eatenCalories) / 2200)}
-              showsText={true}
-              color="#A3FF3D"
-              unfilledColor="#333"
-              borderWidth={0}
-              thickness={6}
-              formatText={() => `${Math.max(0, 2200 - eatenCalories)}`}
-            />
-            <Text style={styles.remainingLabel}>Remaining</Text>
+          {/* Ligne séparatrice */}
+          <View style={styles.gvDivider} />
+
+          {/* Barre Mangées */}
+          <View style={styles.gvRow}>
+            <View style={styles.gvRowLeft}>
+              <View style={[styles.gvDot, { backgroundColor: "#A3FF3D" }]} />
+              <Text style={styles.gvRowLabel}>Eaten</Text>
+            </View>
+            <Text style={styles.gvRowValue}>
+              {eatenCalories}
+              <Text style={styles.gvRowUnit}> / 2200 kcal</Text>
+            </Text>
           </View>
+          <View style={styles.gvBarBg}>
+            <View
+              style={[
+                styles.gvBarFill,
+                {
+                  width: `${Math.min(100, (eatenCalories / 2200) * 100)}%`,
+                  backgroundColor: "#A3FF3D",
+                },
+              ]}
+            />
+          </View>
+
+          {/* Barre Brûlées */}
+          <View style={[styles.gvRow, { marginTop: 14 }]}>
+            <View style={styles.gvRowLeft}>
+              <View style={[styles.gvDot, { backgroundColor: "#FF6432" }]} />
+              <Text style={styles.gvRowLabel}>Brûlées</Text>
+            </View>
+            <Text style={styles.gvRowValue}>
+              {burnedCalories}
+              <Text style={styles.gvRowUnit}> / 430 kcal</Text>
+            </Text>
+          </View>
+          <View style={styles.gvBarBg}>
+            <View
+              style={[
+                styles.gvBarFill,
+                {
+                  width: `${Math.min(100, (burnedCalories / 430) * 100)}%`,
+                  backgroundColor: "#FF6432",
+                },
+              ]}
+            />
+          </View>
+
+          {/* Banderole bonus */}
+          {allMealsChecked && eatenCalories < 2200 && (
+            <View style={styles.bonusBanner}>
+              <MaterialCommunityIcons
+                name="lightning-bolt"
+                size={15}
+                color="#000"
+              />
+              <Text style={styles.bonusBannerText}>
+                You still have{" "}
+                <Text style={{ fontWeight: "800" }}>
+                  {2200 - eatenCalories} kcal
+                </Text>{" "}
+                to spend freely!
+              </Text>
+            </View>
+          )}
         </View>
       </View>
 
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Meals of the day</Text>
 
-        {todaysPlanning?.repas?.map((meal, index) => {
-          // 'meal' est enrichi avec 'recette'
-          const nom = meal.recette?.nom_recette || meal.categorie;
-          const calories = meal.recette?.calories || 0;
-          const imageUrl =
-            meal.recette?.image_url ||
-            "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800";
+        {todaysPlanning?.repas?.length > 0 ? (
+          <View style={styles.mealsContainer}>
+            {todaysPlanning.repas.map((meal, index) => {
+              const nom = meal.recette?.nom_recette || meal.categorie || "Meal";
+              const calories = meal.recette?.calories || 0;
+              const cat = meal.categorie || "dejeuner";
+              const color = categoryColor[cat] || "#A3FF3D";
+              const icon = categoryIcon[cat] || "silverware-fork-knife";
 
-          return (
-            <TouchableOpacity
-              key={index}
-              style={styles.mealCard}
-              onPress={() =>
-                // Navigation avec ID
-                navigation.navigate("RecipeDetail", {
-                  recipeId: meal.id_recette,
-                })
-              }
-            >
-              <Image source={{ uri: imageUrl }} style={styles.mealImage} />
-              <View style={styles.darkOverlay} />
-              <View style={styles.mealOverlay}>
-                <View>
-                  <Text style={styles.mealTitle} numberOfLines={1}>
-                    {nom}
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.mealRow,
+                    index < todaysPlanning.repas.length - 1 &&
+                      styles.mealRowBorder,
+                  ]}
+                  onPress={() =>
+                    navigation.navigate("RecipeDetail", {
+                      recipeId: meal.id_recette,
+                    })
+                  }
+                  activeOpacity={0.7}
+                >
+                  <View
+                    style={[
+                      styles.mealIconBox,
+                      { backgroundColor: `${color}18` },
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      name={icon}
+                      size={18}
+                      color={color}
+                    />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text style={styles.mealRowName} numberOfLines={1}>
+                      {nom}
+                    </Text>
+                    <Text style={styles.mealRowTime}>
+                      {meal.heure_debut || "—"}
+                    </Text>
+                  </View>
+                  <Text style={[styles.mealRowCal, { color }]}>
+                    {calories} kcal
                   </Text>
-                  <Text style={styles.mealInfo}>
-                    {meal.heure_debut || "??:??"} • {calories} kcal
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={22} color="#fff" />
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+                  <Ionicons
+                    name="chevron-forward"
+                    size={16}
+                    color="#C4C4C4"
+                    style={{ marginLeft: 6 }}
+                  />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ) : (
+          <View style={styles.mealsEmpty}>
+            <MaterialCommunityIcons
+              name="silverware-fork-knife"
+              size={28}
+              color="#333"
+            />
+            <Text style={styles.mealsEmptyText}>No meals planned today</Text>
+          </View>
+        )}
       </View>
     </ScrollView>
   );
@@ -360,20 +562,33 @@ export default function Dashboard({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F7F7F9",
   },
 
   // HEADER
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 25,
-    marginTop: 50,
     marginBottom: 15,
   },
+  greetingText: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#0A0A0A",
+    letterSpacing: -0.5,
+    lineHeight: 28,
+  },
+  greetingDate: {
+    fontSize: 13,
+    color: "#9CA3AF",
+    marginTop: 2,
+    fontWeight: "500",
+  },
   logo: {
-    width: 120,
-    height: 40,
+    width: 150,
+    height: 50,
     resizeMode: "contain",
   },
   addButton: {
@@ -385,173 +600,290 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  // TRAINING CARD
-  trainingCard: {
-    marginHorizontal: 25,
-    borderRadius: 20,
-    overflow: "hidden",
-    height: 210,
-    marginBottom: 25,
-  },
-  trainingImage: {
-    width: "100%",
-    height: "100%",
-  },
-  overlay: {
-    position: "absolute",
-    inset: 0,
-    padding: 20,
-    backgroundColor: "rgba(0,0,0,0.3)",
-  },
-  trainingTitle: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 16,
-  },
-  trainingSubtitle: {
-    color: "#ccc",
-    fontSize: 14,
-  },
-
-  // NOUVEAU BLOC INFO
-  infoContainer: {
-    position: "absolute",
-    bottom: 25,
-    left: 20,
-    right: 20,
-    flexDirection: "row",
-    alignItems: "flex-end",
-  },
-  playButton: {
-    backgroundColor: "rgba(255,255,255,0.3)",
-    width: 45,
-    height: 45,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 15,
-  },
-  infoBottom: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 5,
-  },
-  trainingValue: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  trainingLabel: {
-    color: "#ccc",
-    fontSize: 12,
-  },
-  progressWrapper: {
-    width: "100%",
-  },
-  progressBarBackground: {
-    width: "100%",
-    height: 6,
-    backgroundColor: "#333",
-    borderRadius: 3,
-    overflow: "hidden",
-  },
-  progressBarFill: {
-    height: "100%",
-    backgroundColor: "#A3FF3D",
-  },
-
-  workoutCircle: {
-    position: "absolute",
-    right: 20,
-    top: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 3,
-    borderColor: "#fff",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  workoutText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  workoutLabel: {
-    color: "#ccc",
-    fontSize: 10,
-  },
-
   // SECTIONS
   sectionContainer: {
     marginHorizontal: 25,
-    marginBottom: 25,
+    marginBottom: 22,
   },
   sectionTitle: {
+    color: "#0A0A0A",
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 12,
+    letterSpacing: -0.3,
+  },
+
+  // TRAINING CARD (dark, no image)
+  trainingCard: {
+    backgroundColor: "#0A0A0A",
+    borderRadius: 22,
+    padding: 20,
+  },
+  tcHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  tcBadge: {
+    backgroundColor: "#A3FF3D",
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  tcBadgeText: {
+    fontSize: 11,
+    fontWeight: "800",
     color: "#000",
+    letterSpacing: 0.5,
+  },
+  tcWorkoutPill: {
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  tcWorkoutPillText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  tcTitle: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+    marginBottom: 16,
+  },
+  tcMetrics: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1A1A1A",
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  tcMetricItem: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+  },
+  tcMetricValue: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 15,
+  },
+  tcMetricLabel: {
+    color: "#9CA3AF",
+    fontSize: 12,
+  },
+  tcMetricDivider: {
+    width: 1,
+    height: 20,
+    backgroundColor: "#2A2A2A",
+  },
+  tcProgressBg: {
+    height: 4,
+    backgroundColor: "#1E1E1E",
+    borderRadius: 2,
+    overflow: "hidden",
+    marginBottom: 16,
+  },
+  tcProgressFill: {
+    height: "100%",
+    backgroundColor: "#A3FF3D",
+    borderRadius: 2,
+  },
+  tcStartBtn: {
+    backgroundColor: "#A3FF3D",
+    borderRadius: 14,
+    paddingVertical: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  tcStartBtnText: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#000",
+  },
+  tcRestDay: {
+    alignItems: "center",
+    paddingVertical: 32,
+  },
+  tcRestTitle: {
+    color: "#fff",
     fontSize: 20,
     fontWeight: "700",
-    marginBottom: 10,
+    marginBottom: 6,
+  },
+  tcRestSub: {
+    color: "#9CA3AF",
+    fontSize: 14,
+    textAlign: "center",
+    paddingHorizontal: 10,
   },
 
   // GENERAL VIEW
   generalCard: {
-    backgroundColor: "#000",
+    backgroundColor: "#0A0A0A",
     borderRadius: 20,
     padding: 20,
+  },
+  gvHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    marginBottom: 16,
+  },
+  gvRemaining: {
+    color: "#fff",
+    fontSize: 36,
+    fontWeight: "800",
+    letterSpacing: -1,
+  },
+  gvRemainingUnit: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#9CA3AF",
+    letterSpacing: 0,
+  },
+  gvRemainingLabel: {
+    color: "#9CA3AF",
+    fontSize: 12,
+    fontWeight: "500",
+    marginTop: 2,
+  },
+  gvBadge: {
+    backgroundColor: "#1A1A1A",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  gvBadgeText: {
+    color: "#A3FF3D",
+    fontWeight: "800",
+    fontSize: 14,
+  },
+  gvDivider: {
+    height: 1,
+    backgroundColor: "#1E1E1E",
+    marginBottom: 16,
+  },
+  gvRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 6,
   },
-  infoText: {
-    color: "#ccc",
-    fontSize: 13,
-    marginTop: 6,
-  },
-  infoSub: {
-    color: "#A3FF3D",
-  },
-  circleContainer: {
+  gvRowLeft: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: 8,
   },
-  remainingLabel: {
-    color: "#ccc",
-    fontSize: 12,
-    marginTop: 4,
+  gvDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  gvRowLabel: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  gvRowValue: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  gvRowUnit: {
+    color: "#555",
+    fontWeight: "400",
+  },
+  gvBarBg: {
+    height: 6,
+    backgroundColor: "#1E1E1E",
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  gvBarFill: {
+    height: "100%",
+    borderRadius: 3,
   },
 
-  // MEALS
-  mealCard: {
-    marginTop: 12,
-    borderRadius: 15,
-    overflow: "hidden",
-    position: "relative",
-  },
-  mealImage: {
-    width: "100%",
-    height: 120,
-  },
-  darkOverlay: {
-    position: "absolute",
-    inset: 0,
-    backgroundColor: "rgba(0,0,0,0.35)",
-  },
-  mealOverlay: {
-    position: "absolute",
-    bottom: 12,
-    left: 15,
-    right: 15,
+  // BONUS BANNER
+  bonusBanner: {
+    marginTop: 14,
+    backgroundColor: "#A3FF3D",
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    width: "100%",
+    gap: 8,
   },
-  mealTitle: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 16,
-  },
-  mealInfo: {
-    color: "#ccc",
+  bonusBannerText: {
+    flex: 1,
+    color: "#000",
     fontSize: 13,
+    fontWeight: "600",
+  },
+
+  // MEALS LIST
+  mealsContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  mealRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  mealRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+  },
+  mealIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  mealRowName: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#0A0A0A",
+  },
+  mealRowTime: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    marginTop: 2,
+  },
+  mealRowCal: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  mealsEmpty: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 30,
+    alignItems: "center",
+    gap: 10,
+  },
+  mealsEmptyText: {
+    color: "#9CA3AF",
+    fontSize: 14,
+    fontWeight: "500",
   },
 });

@@ -6,13 +6,19 @@ import {
   Image,
   TouchableOpacity,
   FlatList,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Progress from "react-native-progress";
-import { useNavigation, useRoute } from "@react-navigation/native"; // ✅ pour naviguer
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from "@react-navigation/native"; // ✅ pour naviguer
 import { useChat } from "../ChatContext";
-import { getExercices } from "../api/exercices";
+import { getExercices, getExercice } from "../api/exercices";
+import { getPlanningByDate } from "../api/calendrier";
 import { getSeance } from "../api/seances";
 import { usePlayer } from "../PlayerContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -35,6 +41,74 @@ export default function Training() {
 
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // New states for dashboard-like behavior
+  const [closestTraining, setClosestTraining] = useState(null);
+  const [workoutStats, setWorkoutStats] = useState({ done: 0, total: 0 });
+  const [burnedCalories, setBurnedCalories] = useState(0);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchTodayData = async () => {
+        try {
+          const today = new Date();
+          const offset = today.getTimezoneOffset() * 60000;
+          const localISOTime = new Date(today - offset)
+            .toISOString()
+            .slice(0, 10);
+          const userId = 180001;
+
+          const basicData = await getPlanningByDate(userId, localISOTime);
+
+          let enrichedSeances = [];
+          if (basicData.seances) {
+            enrichedSeances = await Promise.all(
+              basicData.seances.map(async (s) => {
+                if (s.id_exercice) {
+                  try {
+                    const exoRes = await getExercice(s.id_exercice);
+                    return { ...s, exercice: exoRes.data };
+                  } catch (err) {
+                    return s;
+                  }
+                }
+                return s;
+              }),
+            );
+          }
+
+          if (enrichedSeances.length > 0) {
+            setClosestTraining(enrichedSeances[0]);
+          } else {
+            setClosestTraining(null);
+          }
+
+          const dateKey = `workout_done_${localISOTime}`;
+          const isDone = await AsyncStorage.getItem(dateKey);
+
+          const totalW = enrichedSeances.length;
+          const doneW = isDone === "true" && totalW > 0 ? 1 : 0;
+          setWorkoutStats({ done: doneW, total: totalW });
+
+          if (isDone === "true") {
+            let burned = 0;
+            if (enrichedSeances) {
+              enrichedSeances.forEach((s) => {
+                burned += s.exercice?.calories_brulees || 300;
+              });
+            }
+            setBurnedCalories(burned);
+          } else {
+            setBurnedCalories(0);
+          }
+        } catch (e) {
+          console.log("Error training fetch", e);
+        }
+      };
+
+      fetchTodayData();
+    }, []),
+  );
 
   // Auto-start if requested
   useEffect(() => {
@@ -71,9 +145,9 @@ export default function Training() {
 
   // const [isPlaying, setIsPlaying] = useState(false); REMOVED
   // const [progress, setProgress] = useState(0); REMOVED
-  const workoutDone = 1;
-  const workoutTotal = 2;
-  const workoutRatio = workoutDone / workoutTotal;
+  const workoutDone = workoutStats.done;
+  const workoutTotal = workoutStats.total || 1;
+  const workoutRatio = workoutStats.total > 0 ? workoutDone / workoutTotal : 0;
 
   // --- Animation de la barre de progression ---
   // REMOVED local interval logic, handled in PlayerContext
@@ -143,9 +217,47 @@ export default function Training() {
     return isPlaying ? "pause" : "play";
   };
 
+  const openActiveWorkout = () => {
+    if (!closestTraining) return;
+    if (closestTraining.id_seance) {
+      navigation.navigate("ActiveWorkout", {
+        seanceId: closestTraining.id_seance,
+      });
+    } else {
+      // S'il n'y a pas d'ID de séance mais juste un exercice,
+      // on peut faire un mock ou juste ne rien faire
+      navigation.navigate("ActiveWorkout", { seanceId: 0 }); // pass mock id
+    }
+  };
+
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 20 }]}>
-      {/* --- HEADER --- */}
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{
+        paddingTop: insets.top + 20,
+        paddingBottom: 100,
+      }}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* HEADER LOGO + IA */}
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 15,
+        }}
+      >
+        <Image
+          source={require("../assets/logo.png")}
+          style={{ width: 150, height: 50, resizeMode: "contain" }}
+        />
+        <TouchableOpacity style={styles.addButton} onPress={openChat}>
+          <Ionicons name="add" size={26} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      {/* --- TITLE --- */}
       <View style={styles.headerContainer}>
         <View>
           <Text style={styles.title}>Today's activities :</Text>
@@ -157,91 +269,102 @@ export default function Training() {
                 : "Body Weight"}
           </Text>
         </View>
-        <TouchableOpacity style={styles.addButton} onPress={openChat}>
-          <Ionicons name="add" size={28} color="#000" />
-        </TouchableOpacity>
       </View>
 
       {/* --- CARTE PRINCIPALE --- */}
-      <View style={styles.mainCard}>
+      <TouchableOpacity
+        style={styles.trainingCard}
+        onPress={openActiveWorkout}
+        activeOpacity={0.9}
+      >
         <Image
           source={require("../assets/welcome_page_pic.jpg")}
-          style={styles.cardImage}
+          style={styles.trainingImage}
         />
         <View style={styles.overlay}>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <View>
-              <Text style={styles.cardTitle}>Today's activities :</Text>
-              <Text style={styles.cardSubtitle}>Body Weight</Text>
-            </View>
+          {/* TITRES */}
+          <View>
+            <Text style={styles.trainingTitle}>Today's activities :</Text>
+            {/* Utiliser le nom de l'exercice enrichi */}
+            <Text style={styles.trainingSubtitle}>
+              {closestTraining?.exercice?.nom_exercice || "Workout"}
+            </Text>
+          </View>
 
-            {/* Cercle Workout */}
-            <View style={styles.circleWrapper}>
-              <Progress.Circle
-                size={70}
-                progress={workoutRatio}
-                color="#fff"
-                unfilledColor="rgba(255,255,255,0.3)"
-                thickness={3}
-                borderWidth={0}
-              />
-              <View style={styles.circleCenter}>
-                <Text style={styles.circleText}>
-                  {workoutDone}/{workoutTotal}
-                </Text>
-                <Text style={styles.circleSub}>Workout</Text>
+          {/* INFOS + PLAY + BARRE */}
+          {closestTraining ? (
+            <View style={styles.infoContainer}>
+              <TouchableOpacity
+                onPress={openActiveWorkout}
+                style={styles.playButton}
+              >
+                <Ionicons name="play" size={24} color="#fff" />
+              </TouchableOpacity>
+
+              <View style={{ flex: 1 }}>
+                <View style={styles.infoBottom}>
+                  <View>
+                    <Text style={styles.trainingValue}>
+                      {burnedCalories > 0 ? burnedCalories : 300} kcal
+                    </Text>
+                    <Text style={styles.trainingLabel}>Est. Calories</Text>
+                  </View>
+
+                  <View style={{ alignItems: "flex-end" }}>
+                    <Text style={styles.trainingValue}>
+                      {closestTraining.duree || 60} min
+                    </Text>
+                    <Text style={styles.trainingLabel}>Time</Text>
+                  </View>
+                </View>
+
+                <View style={styles.progressWrapper}>
+                  <View style={styles.progressBarBackground}>
+                    <View
+                      style={[
+                        styles.progressBarFill,
+                        { width: `${progress * 100}%` },
+                      ]}
+                    />
+                  </View>
+                </View>
               </View>
             </View>
-          </View>
-
-          {/* Ligne Play + Temps alignée */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginTop: 25,
-            }}
-          >
-            <TouchableOpacity onPress={handlePress} style={styles.playButton}>
-              <Ionicons
-                name={getIconName()}
-                size={28}
-                color="#fff"
-                style={{ transform: [{ scaleX: 1.05 }] }}
-              />
-            </TouchableOpacity>
-
-            <View style={{ alignItems: "flex-end", marginRight: 5 }}>
-              <Text style={styles.timeValue}>1h30</Text>
-              <Text style={styles.timeLabel}>Time</Text>
+          ) : (
+            <View
+              style={{
+                position: "absolute",
+                inset: 0,
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "rgba(0,0,0,0.6)",
+              }}
+            >
+              <Text style={{ color: "#fff", fontSize: 24, fontWeight: "bold" }}>
+                Rest Day
+              </Text>
+              <Text style={{ color: "#ccc", fontSize: 16 }}>
+                No training scheduled today
+              </Text>
             </View>
-          </View>
+          )}
 
-          {/* Barre de progression */}
-          <Progress.Bar
-            progress={progress}
-            width={null}
-            height={4}
-            color="#A3FF3D"
-            unfilledColor="#222"
-            borderWidth={0}
-            style={{ marginTop: 15 }}
-          />
+          {/* CERCLE WORKOUT */}
+          <View style={styles.workoutCircle}>
+            <Text style={styles.workoutText}>
+              {workoutStats.done}/{workoutStats.total}
+            </Text>
+            <Text style={styles.workoutLabel}>Workout</Text>
+          </View>
         </View>
-      </View>
+      </TouchableOpacity>
 
       {/* --- RECOMMANDATIONS --- */}
       <Text style={styles.sectionTitle}>Recommendation</Text>
 
       <FlatList
         data={exercises}
+        scrollEnabled={false}
         keyExtractor={(item) => item.id_exercice.toString()}
         renderItem={({ item }) => (
           <TouchableOpacity
@@ -286,7 +409,7 @@ export default function Training() {
           )
         }
       />
-    </View>
+    </ScrollView>
   );
 }
 
@@ -295,7 +418,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingHorizontal: 20,
+    paddingHorizontal: 25,
   },
   headerContainer: {
     flexDirection: "row",
@@ -313,24 +436,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   addButton: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#000",
+    backgroundColor: "#000",
     width: 40,
     height: 40,
     borderRadius: 20,
-    justifyContent: "center",
     alignItems: "center",
-    elevation: 4,
+    justifyContent: "center",
   },
-  mainCard: {
-    position: "relative",
-    height: 200,
+  // TRAINING CARD (Identique Dashboard)
+  trainingCard: {
     borderRadius: 20,
     overflow: "hidden",
+    height: 210,
     marginBottom: 25,
   },
-  cardImage: {
+  trainingImage: {
     width: "100%",
     height: "100%",
   },
@@ -338,55 +458,82 @@ const styles = StyleSheet.create({
     position: "absolute",
     inset: 0,
     padding: 20,
-    backgroundColor: "rgba(0,0,0,0.35)",
+    backgroundColor: "rgba(0,0,0,0.3)",
   },
-  cardTitle: {
+  trainingTitle: {
     color: "#fff",
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  cardSubtitle: {
-    color: "#ddd",
-    fontSize: 14,
-    marginTop: 2,
-  },
-  circleWrapper: {
-    position: "relative",
-    width: 70,
-    height: 70,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  circleCenter: {
-    position: "absolute",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  circleText: {
-    color: "#fff",
-    fontSize: 16,
     fontWeight: "700",
+    fontSize: 16,
   },
-  circleSub: {
+  trainingSubtitle: {
     color: "#ccc",
-    fontSize: 12,
+    fontSize: 14,
+  },
+  infoContainer: {
+    position: "absolute",
+    bottom: 25,
+    left: 20,
+    right: 20,
+    flexDirection: "row",
+    alignItems: "flex-end",
   },
   playButton: {
     backgroundColor: "rgba(255,255,255,0.3)",
     width: 45,
     height: 45,
-    borderRadius: 25,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 15,
+  },
+  infoBottom: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 5,
+  },
+  trainingValue: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  trainingLabel: {
+    color: "#ccc",
+    fontSize: 12,
+  },
+  progressWrapper: {
+    width: "100%",
+  },
+  progressBarBackground: {
+    width: "100%",
+    height: 6,
+    backgroundColor: "#333",
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    height: "100%",
+    backgroundColor: "#A3FF3D",
+  },
+  workoutCircle: {
+    position: "absolute",
+    right: 20,
+    top: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 3,
+    borderColor: "#fff",
     justifyContent: "center",
     alignItems: "center",
   },
-  timeValue: {
+  workoutText: {
     color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "700",
   },
-  timeLabel: {
-    color: "#bbb",
-    fontSize: 12,
+  workoutLabel: {
+    color: "#ccc",
+    fontSize: 10,
   },
   sectionTitle: {
     fontSize: 22,

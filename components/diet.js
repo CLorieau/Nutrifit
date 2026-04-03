@@ -10,6 +10,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  TouchableOpacity,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -252,19 +253,42 @@ export default function Diet({ navigation }) {
 
   // ————— RENDU
   return (
-    <View
+    <ScrollView
       style={{
         flex: 1,
         backgroundColor: "#F5F5F7",
-        paddingTop: insets.top + 16,
       }}
+      contentContainerStyle={{ paddingTop: insets.top + 20, paddingBottom: 100 }}
+      showsVerticalScrollIndicator={false}
     >
-      {/* Barre de recherche + Bouton + */}
+      {/* HEADER LOGO + IA */}
+      <View style={{
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingHorizontal: 25,
+        marginBottom: 15,
+      }}>
+        <Image source={require("../assets/logo.png")} style={{ width: 150, height: 50, resizeMode: "contain" }} />
+        <TouchableOpacity style={{
+          backgroundColor: "#000",
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          alignItems: "center",
+          justifyContent: "center",
+        }} onPress={openChat}>
+          <Ionicons name="add" size={26} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Barre de recherche */}
       <View
         style={{
-          paddingHorizontal: 20,
+          paddingHorizontal: 25,
           marginBottom: 16,
           flexDirection: "row",
+          alignItems: "center",
           gap: 10,
         }}
       >
@@ -293,20 +317,6 @@ export default function Diet({ navigation }) {
             }}
           />
         </View>
-
-        <Pressable
-          onPress={openChat}
-          style={{
-            width: 48,
-            height: 48,
-            borderRadius: 24,
-            backgroundColor: "#111",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Ionicons name="add" size={26} color="#fff" />
-        </Pressable>
       </View>
 
       {loading ? (
@@ -316,18 +326,18 @@ export default function Diet({ navigation }) {
           <ActivityIndicator />
         </View>
       ) : (
-        <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+        <View>
           {/* SECTION: Most loved */}
-          <View style={{ paddingHorizontal: 20, marginBottom: 10 }}>
+          <View style={{ paddingHorizontal: 25, marginBottom: 10 }}>
             <Text style={{ fontSize: 20, fontWeight: "800" }}>Most loved</Text>
           </View>
 
           <FlatList
             data={mostLoved}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item.id.toString()}
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20 }}
+            contentContainerStyle={{ paddingHorizontal: 25 }}
             renderItem={({ item }) => (
               <LargeRecipeCard
                 item={item}
@@ -339,7 +349,7 @@ export default function Diet({ navigation }) {
 
           {/* SECTION: For you */}
           <View
-            style={{ paddingHorizontal: 20, marginTop: 20, marginBottom: 6 }}
+            style={{ paddingHorizontal: 25, marginTop: 20, marginBottom: 6 }}
           >
             <Text style={{ fontSize: 20, fontWeight: "800" }}>For you</Text>
             <Text style={{ color: "#6B7280", marginTop: 2, fontSize: 12 }}>
@@ -347,10 +357,10 @@ export default function Diet({ navigation }) {
             </Text>
           </View>
 
-          <View style={{ paddingHorizontal: 20 }}>
+          <View style={{ paddingHorizontal: 25 }}>
             <FlatList
               data={forYou}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item) => item.id.toString()}
               numColumns={2}
               scrollEnabled={false}
               columnWrapperStyle={{ justifyContent: "space-between" }}
@@ -377,9 +387,9 @@ export default function Diet({ navigation }) {
               }
             />
           </View>
-        </ScrollView>
+        </View>
       )}
-    </View>
+    </ScrollView>
   );
 }
 

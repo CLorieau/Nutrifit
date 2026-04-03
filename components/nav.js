@@ -1,11 +1,12 @@
 // components/nav.js
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { getPendingRequests } from '../api/social';
 
 import CalendarView from "../screens/calendarview";
 import ProfileView from "../screens/profileview";
@@ -13,6 +14,7 @@ import DietView from "../screens/dietview";
 import RecipeDetailView from "../screens/recipeDetailView";
 import TrainingView from "../screens/trainingview";
 import TrainingDetailView from "../screens/trainingDetailView";
+import ActiveWorkout from "./activeWorkout";
 import DashboardView from "../screens/dashboardView";
 
 const Tab = createBottomTabNavigator();
@@ -31,26 +33,18 @@ function CustomTabBar({ state, descriptors, navigation }) {
     const insets = useSafeAreaInsets();
 
     return (
-        <SafeAreaView edges={['bottom']} style={{ backgroundColor: '#F5F5F7' }}>
+        <SafeAreaView edges={['bottom']} style={{ backgroundColor: 'transparent', position: 'absolute', bottom: 0, left: 0, right: 0 }}>
             <View
                 style={{
                     marginHorizontal: 20,
                     marginBottom: (insets.bottom || 10),
-                    borderRadius: 28,
-                    backgroundColor: '#FFFFFF',
-                    borderWidth: 1,
-                    borderColor: '#E6E6E8',
+                    borderRadius: 36,
+                    backgroundColor: '#000000',
                     flexDirection: 'row',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    paddingHorizontal: 12,
-                    height: 72,
-                    overflow: 'visible',
-                    shadowColor: '#000',
-                    shadowOpacity: 0.08,
-                    shadowRadius: 10,
-                    shadowOffset: { width: 0, height: 4 },
-                    elevation: 6,
+                    paddingHorizontal: 8,
+                    height: 70,
                 }}
             >
                 {state.routes.map((route, index) => {
@@ -69,72 +63,42 @@ function CustomTabBar({ state, descriptors, navigation }) {
                         }
                     };
 
+                    const iconColor = isFocused ? '#A3FF3D' : '#A1A1AA';
                     const icon = options.tabBarIcon
-                        ? options.tabBarIcon({ focused: isFocused, size: 26 })
+                        ? options.tabBarIcon({ focused: isFocused, size: 26, color: iconColor })
                         : null;
 
                     return (
                         <TouchableOpacity
                             key={route.key}
                             onPress={onPress}
-                            activeOpacity={0.9}
+                            activeOpacity={0.8}
                             style={{
-                                flex: isFocused ? 1.6 : 1,
+                                flex: 1,
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                marginHorizontal: isFocused ? 10 : 6,
-                                overflow: 'visible',
                             }}
                         >
-                            {isFocused && (
-                                <View
-                                    style={{
-                                        position: 'absolute',
-                                        top: -34,
-                                        paddingHorizontal: 18,
-                                        height: 30,
-                                        borderRadius: 18,
-                                        backgroundColor: '#222',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        zIndex: 5,
-                                        shadowColor: '#000',
-                                        shadowOpacity: 0.15,
-                                        shadowRadius: 6,
-                                        shadowOffset: { width: 0, height: 2 },
-                                        elevation: 4,
-                                        alignSelf: 'center',
-                                    }}
-                                >
-                                    <Text
-                                        style={{
-                                            color: '#fff',
-                                            fontWeight: '600',
-                                            fontSize: 14,
-                                            textAlign: 'center',
-                                        }}
-                                        numberOfLines={1}
-                                        adjustsFontSizeToFit
-                                        minimumFontScale={0.8}
-                                    >
-                                        {label}
-                                    </Text>
-                                </View>
-                            )}
-
                             <View
                                 style={{
-                                    width: 54,
-                                    height: 54,
-                                    borderRadius: 27,
+                                    width: 50,
+                                    height: 50,
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    transform: [{ translateY: isFocused ? -4 : 0 }],
-                                    backgroundColor: isFocused ? '#fff' : 'transparent',
-                                    borderWidth: isFocused ? 1 : 0,
-                                    borderColor: isFocused ? '#222' : 'transparent',
                                 }}
                             >
+                                {/* Fond actif séparé pour éviter la perte de borderRadius sur Android */}
+                                {isFocused && (
+                                    <View
+                                        style={{
+                                            position: 'absolute',
+                                            width: 50,
+                                            height: 50,
+                                            borderRadius: 25,
+                                            backgroundColor: '#1E1E1E',
+                                        }}
+                                    />
+                                )}
                                 {icon}
                             </View>
                         </TouchableOpacity>
@@ -173,6 +137,7 @@ function TrainingStack() {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="TrainingHome" component={TrainingView} />
             <Stack.Screen name="TrainingDetail" component={TrainingDetailView} />
+            <Stack.Screen name="ActiveWorkout" component={ActiveWorkout} />
         </Stack.Navigator>
     );
 }
@@ -190,6 +155,22 @@ function ProfileStack() {
 }
 
 export default function Nav() {
+    const [hasPendingRequests, setHasPendingRequests] = useState(false);
+
+    useEffect(() => {
+        const checkRequests = async () => {
+            try {
+                const res = await getPendingRequests();
+                setHasPendingRequests(res.data && res.data.length > 0);
+            } catch (e) {
+                // ignore
+            }
+        };
+        checkRequests();
+        const interval = setInterval(checkRequests, 30000); // Check every 30 seconds
+        return () => clearInterval(interval);
+    }, []);
+
     return (
         <Tab.Navigator
             initialRouteName="Dashboard"
@@ -204,7 +185,7 @@ export default function Nav() {
                 name="Dashboard"
                 component={DashboardStack}
                 options={{
-                    tabBarIcon: ({ size }) => <Ionicons name="grid-outline" size={size} />,
+                    tabBarIcon: ({ size, color }) => <Ionicons name="grid" size={size} color={color} />,
                     tabBarLabel: 'Dashboard',
                 }}
             />
@@ -212,7 +193,7 @@ export default function Nav() {
                 name="Calendar"
                 component={CalendarView}
                 options={{
-                    tabBarIcon: ({ size }) => <Ionicons name="calendar-outline" size={size} />,
+                    tabBarIcon: ({ size, color }) => <Ionicons name="calendar" size={size} color={color} />,
                     tabBarLabel: 'Calendar',
                 }}
             />
@@ -220,7 +201,7 @@ export default function Nav() {
                 name="Training"
                 component={TrainingStack}
                 options={{
-                    tabBarIcon: ({ size }) => (<MaterialCommunityIcons name="dumbbell" size={size} />),
+                    tabBarIcon: ({ size, color }) => (<MaterialCommunityIcons name="dumbbell" size={size} color={color} />),
                     tabBarLabel: 'Training',
                 }}
             />
@@ -228,7 +209,7 @@ export default function Nav() {
                 name="Diet"
                 component={DietStack}
                 options={{
-                    tabBarIcon: ({ size }) => <MaterialCommunityIcons name="silverware-fork-knife" size={size} />,
+                    tabBarIcon: ({ size, color }) => <MaterialCommunityIcons name="silverware-fork-knife" size={size} color={color} />,
                     tabBarLabel: 'Diet',
                 }}
             />
@@ -236,11 +217,10 @@ export default function Nav() {
                 name="Profile"
                 component={ProfileStack}
                 options={{
-                    tabBarIcon: ({ size }) => {
-                        const hasPendingRequests = true; // Mock Notification
+                    tabBarIcon: ({ size, color }) => {
                         return (
                             <View style={{ position: "relative" }}>
-                                <Ionicons name="person-outline" size={size} />
+                                <Ionicons name="person" size={size} color={color} />
                                 {hasPendingRequests && (
                                     <View
                                         style={{
