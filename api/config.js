@@ -1,2 +1,2 @@
-export const BASE_URL = "http://87.106.141.247/nutrifit-api";
+export const BASE_URL = "https://nutrifitapi.frenchybot.fr";
 
