@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AuthContext from "../AuthContext";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useChat } from "../ChatContext";
+import DonationModal from "./DonationModal";
 
 // ─── Palette identique aux autres écrans ───────────────────────────────────
 const BG = "#F7F7F9"; // fond général
@@ -35,6 +36,7 @@ export default function Profile() {
   const [loading, setLoading] = React.useState(true);
   const [friendsCount, setFriendsCount] = React.useState(0);
   const [sharedRecipes, setSharedRecipes] = React.useState([]);
+  const [showDonation, setShowDonation] = React.useState(false);
   const [userData, setUserData] = React.useState({
     prenom: "",
     nom: "",
@@ -166,6 +168,15 @@ export default function Profile() {
       onPress: () => navigation.navigate("EditProfile", { userData }),
     },
     {
+      id: "donate",
+      icon: "heart-outline",
+      label: "Make a donation",
+      badge: "🧪",
+      danger: false,
+      accent: true,
+      onPress: () => setShowDonation(true),
+    },
+    {
       id: "logout",
       icon: "log-out-outline",
       label: "Log out",
@@ -176,14 +187,15 @@ export default function Profile() {
   ];
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{
-        paddingTop: insets.top + 20,
-        paddingBottom: 110,
-      }}
-      showsVerticalScrollIndicator={false}
-    >
+    <>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{
+          paddingTop: insets.top + 20,
+          paddingBottom: 110,
+        }}
+        showsVerticalScrollIndicator={false}
+      >
       {/* ─── HEADER — identique aux autres écrans ─── */}
       <View style={styles.header}>
         <Image source={require("../assets/logo.png")} style={styles.logo} />
@@ -398,12 +410,13 @@ export default function Profile() {
                   style={[
                     styles.menuIconBox,
                     item.danger && styles.menuIconBoxDanger,
+                    item.accent && styles.menuIconBoxAccent,
                   ]}
                 >
                   <Ionicons
                     name={item.icon}
                     size={19}
-                    color={item.danger ? "#FF4D4D" : ACCENT}
+                    color={item.danger ? "#FF4D4D" : item.accent ? ACCENT : ACCENT}
                   />
                 </View>
 
@@ -438,6 +451,12 @@ export default function Profile() {
         </View>
       </View>
     </ScrollView>
+
+    <DonationModal
+      visible={showDonation}
+      onClose={() => setShowDonation(false)}
+    />
+    </>
   );
 }
 
@@ -739,6 +758,11 @@ const styles = StyleSheet.create({
   },
   menuIconBoxDanger: {
     backgroundColor: "rgba(255,77,77,0.12)",
+  },
+  menuIconBoxAccent: {
+    backgroundColor: "rgba(163,255,61,0.18)",
+    borderWidth: 1,
+    borderColor: "rgba(163,255,61,0.25)",
   },
   menuLabel: {
     fontSize: 16,
