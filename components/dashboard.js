@@ -300,7 +300,7 @@ export default function Dashboard({ navigation }) {
                     { color: workoutStats.done > 0 ? "#A3FF3D" : "#666" },
                   ]}
                 >
-                  {workoutStats.done}/{workoutStats.total} séance
+                  {workoutStats.done}/{workoutStats.total} session
                   {workoutStats.total > 1 ? "s" : ""}
                 </Text>
               </View>
@@ -407,14 +407,14 @@ export default function Dashboard({ navigation }) {
           <View style={styles.gvHeader}>
             <View>
               <Text style={styles.gvRemaining}>
-                {Math.max(0, 2200 - eatenCalories)}
+                {Math.max(0, (user?.calories_objectif || 2000) - eatenCalories)}
                 <Text style={styles.gvRemainingUnit}> kcal</Text>
               </Text>
               <Text style={styles.gvRemainingLabel}>remaining today</Text>
             </View>
             <View style={styles.gvBadge}>
               <Text style={styles.gvBadgeText}>
-                {Math.round((eatenCalories / 2200) * 100)}%
+                {Math.round((eatenCalories / (user?.calories_objectif || 2000)) * 100)}%
               </Text>
             </View>
           </View>
@@ -430,7 +430,7 @@ export default function Dashboard({ navigation }) {
             </View>
             <Text style={styles.gvRowValue}>
               {eatenCalories}
-              <Text style={styles.gvRowUnit}> / 2200 kcal</Text>
+              <Text style={styles.gvRowUnit}> / {user?.calories_objectif || 2000} kcal</Text>
             </Text>
           </View>
           <View style={styles.gvBarBg}>
@@ -438,7 +438,7 @@ export default function Dashboard({ navigation }) {
               style={[
                 styles.gvBarFill,
                 {
-                  width: `${Math.min(100, (eatenCalories / 2200) * 100)}%`,
+                  width: `${Math.min(100, (eatenCalories / (user?.calories_objectif || 2000)) * 100)}%`,
                   backgroundColor: "#A3FF3D",
                 },
               ]}
@@ -449,7 +449,7 @@ export default function Dashboard({ navigation }) {
           <View style={[styles.gvRow, { marginTop: 14 }]}>
             <View style={styles.gvRowLeft}>
               <View style={[styles.gvDot, { backgroundColor: "#FF6432" }]} />
-              <Text style={styles.gvRowLabel}>Brûlées</Text>
+              <Text style={styles.gvRowLabel}>Burned</Text>
             </View>
             <Text style={styles.gvRowValue}>
               {burnedCalories}
@@ -469,7 +469,7 @@ export default function Dashboard({ navigation }) {
           </View>
 
           {/* Banderole bonus */}
-          {allMealsChecked && eatenCalories < 2200 && (
+          {allMealsChecked && eatenCalories < (user?.calories_objectif || 2000) && (
             <View style={styles.bonusBanner}>
               <MaterialCommunityIcons
                 name="lightning-bolt"
@@ -479,7 +479,7 @@ export default function Dashboard({ navigation }) {
               <Text style={styles.bonusBannerText}>
                 You still have{" "}
                 <Text style={{ fontWeight: "800" }}>
-                  {2200 - eatenCalories} kcal
+                  {(user?.calories_objectif || 2000) - eatenCalories} kcal
                 </Text>{" "}
                 to spend freely!
               </Text>

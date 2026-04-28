@@ -43,13 +43,13 @@ export default function FriendProfileScreen() {
     if (!user) {
         return (
             <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-                <Text>Utilisateur introuvable.</Text>
+                <Text>User not found.</Text>
             </View>
         );
     }
 
     const age = profile?.age || 25;
-    const objectif = profile?.objectif || 'Rester en forme';
+    const objectif = profile?.objectif || 'Stay fit';
     const recipes = profile?.recettes_favorites || [];
     const programs = profile?.programmes_actifs || [];
 
@@ -61,7 +61,7 @@ export default function FriendProfileScreen() {
                 style={styles.recipeBtn}
                 onPress={() => navigation.navigate('RecipeDetail', { recipe: item })}
             >
-                <Text style={styles.recipeBtnText}>Voir la recette</Text>
+                <Text style={styles.recipeBtnText}>View recipe</Text>
             </TouchableOpacity>
         </View>
     );
@@ -77,7 +77,7 @@ export default function FriendProfileScreen() {
                 <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
                     <Ionicons name="chevron-back" size={28} color="#0A0A0A" />
                 </TouchableOpacity>
-                <Text style={styles.title}>Profil de {user.prenom || user.nom}</Text>
+                <Text style={styles.title}>{user.prenom || user.nom}'s Profile</Text>
                 <View style={{ width: 28 }} />
             </View>
 
@@ -100,13 +100,13 @@ export default function FriendProfileScreen() {
                         </Text>
                     </View>
                     <TouchableOpacity style={styles.friendIndicatorBtn}>
-                        <Text style={styles.friendIndicatorText}>Ami <Ionicons name="checkmark" size={13} color="#000" /></Text>
+                        <Text style={styles.friendIndicatorText}>Friend <Ionicons name="checkmark" size={13} color="#000" /></Text>
                     </TouchableOpacity>
                 </View>
             </View>
 
             {/* Section: Objectifs Safe */}
-            <Text style={styles.sectionTitle}>Objectifs en cours</Text>
+            <Text style={styles.sectionTitle}>Current Goals</Text>
             <View style={styles.cardBox}>
                 <View style={styles.goalRow}>
                     <Progress.Circle
@@ -118,14 +118,14 @@ export default function FriendProfileScreen() {
                         thickness={5}
                     />
                     <View style={styles.goalInfo}>
-                        <Text style={styles.goalTitle}>Régularité des séances</Text>
-                        <Text style={styles.goalSubtitle}>Très constant cette semaine !</Text>
+                        <Text style={styles.goalTitle}>Workout Consistency</Text>
+                        <Text style={styles.goalSubtitle}>Very consistent this week!</Text>
                     </View>
                 </View>
             </View>
 
             {/* Section: Recettes Favorites (Carousel) */}
-            <Text style={styles.sectionTitle}>Recettes Favorites</Text>
+            <Text style={styles.sectionTitle}>Favorite Recipes</Text>
             {recipes.length > 0 ? (
                 <FlatList
                     horizontal
@@ -136,11 +136,11 @@ export default function FriendProfileScreen() {
                     contentContainerStyle={{ paddingLeft: 20, paddingRight: 10, paddingBottom: 20 }}
                 />
             ) : (
-                <Text style={styles.emptyText}>{user.prenom || user.nom} n'a aucune recette favorite.</Text>
+                <Text style={styles.emptyText}>{user.prenom || user.nom} has no favorite recipes.</Text>
             )}
 
             {/* Section: Partagées avec vous */}
-            <Text style={styles.sectionTitle}>Partagées avec vous</Text>
+            <Text style={styles.sectionTitle}>Shared with you</Text>
             {sharedWithMe.length > 0 ? (
                 <FlatList
                     horizontal
@@ -156,13 +156,13 @@ export default function FriendProfileScreen() {
                                 style={styles.recipeBtn}
                                 onPress={() => navigation.navigate('RecipeDetail', { recipe: item.recette })}
                             >
-                                <Text style={styles.recipeBtnText}>Voir la recette</Text>
+                                <Text style={styles.recipeBtnText}>View recipe</Text>
                             </TouchableOpacity>
                         </View>
                     )}
                 />
             ) : (
-                <Text style={styles.emptyText}>{user.prenom || user.nom} ne vous a partagé aucune recette.</Text>
+                <Text style={styles.emptyText}>{user.prenom || user.nom} has not shared any recipes with you.</Text>
             )}
         </ScrollView>
     );

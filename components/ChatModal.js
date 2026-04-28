@@ -23,7 +23,7 @@ export default function ChatModal() {
     const insets = useSafeAreaInsets();
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([
-        { id: 1, text: "Salut ! Je suis ton assistant NutriFit. Comment puis-je t'aider aujourd'hui ?", sender: 'bot' }
+        { id: 1, text: "Hi! I am your NutriFit assistant. How can I help you today?", sender: 'bot' }
     ]);
     const flatListRef = useRef(null);
 
@@ -55,7 +55,7 @@ export default function ChatModal() {
         } catch (error) {
             const errorMsg = {
                 id: Date.now() + 1,
-                text: "Désolé, je rencontre un problème de connexion pour le moment.",
+                text: "Sorry, I am having a connection problem right now.",
                 sender: 'bot',
                 isError: true
             };
@@ -87,7 +87,7 @@ export default function ChatModal() {
                     <View style={styles.header}>
                         <View style={styles.headerContent}>
                             <Ionicons name="chatbubble-ellipses-outline" size={24} color="#A3FF3D" />
-                            <Text style={styles.headerTitle}>Assistant NutriFit</Text>
+                            <Text style={styles.headerTitle}>NutriFit Assistant</Text>
                         </View>
                         <TouchableOpacity onPress={closeChat} style={styles.closeButton}>
                             <Ionicons name="close" size={24} color="#fff" />
@@ -123,7 +123,7 @@ export default function ChatModal() {
                     <View style={styles.inputContainer}>
                         <TextInput
                             style={styles.input}
-                            placeholder="Posez votre question..."
+                            placeholder="Ask your question..."
                             placeholderTextColor="#666"
                             value={message}
                             onChangeText={setMessage}

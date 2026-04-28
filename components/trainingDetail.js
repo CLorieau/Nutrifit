@@ -32,7 +32,7 @@ export default function TrainingDetail() {
   }, [exerciseId]);
 
   const parseMuscles = (musclesJSON) => {
-    if (!musclesJSON) return "Non spécifié";
+    if (!musclesJSON) return "Not specified";
     try {
       const parsed = JSON.parse(musclesJSON);
       return Array.isArray(parsed) ? parsed.join(", ") : parsed;
@@ -52,9 +52,9 @@ export default function TrainingDetail() {
   if (!exercise) {
     return (
       <View style={[styles.container, styles.center]}>
-        <Text>Exercice introuvable.</Text>
+        <Text>Exercise not found.</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 20 }}>
-          <Text style={{ color: "blue" }}>Retour</Text>
+          <Text style={{ color: "blue" }}>Back</Text>
         </TouchableOpacity>
       </View>
     );
@@ -106,7 +106,7 @@ export default function TrainingDetail() {
             <Text style={styles.statValue}>
               {exercise.nombre_series || "-"}
             </Text>
-            <Text style={styles.statLabel}>Séries</Text>
+            <Text style={styles.statLabel}>Sets</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
@@ -114,7 +114,7 @@ export default function TrainingDetail() {
             <Text style={styles.statValue}>
               {exercise.temps_recuperation || "-"}s
             </Text>
-            <Text style={styles.statLabel}>Repos</Text>
+            <Text style={styles.statLabel}>Rest</Text>
           </View>
         </View>
 
@@ -122,13 +122,13 @@ export default function TrainingDetail() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Description</Text>
           <Text style={styles.descriptionText}>
-            {exercise.description_exercice || "Aucune description disponible."}
+            {exercise.description_exercice || "No description available."}
           </Text>
         </View>
 
         {/* --- MUSCLES --- */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Muscles ciblés</Text>
+          <Text style={styles.sectionTitle}>Targeted muscles</Text>
           <View style={styles.tagContainer}>
             {parseMuscles(exercise.muscle_cible)
               .split(", ")

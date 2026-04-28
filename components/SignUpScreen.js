@@ -21,18 +21,18 @@ export default function SignUpScreen({ navigation }) {
 
   const handleSignUp = async () => {
     if (!fullName || !lastName || !email || !password) {
-      Alert.alert("Erreur", "Veuillez remplir tous les champs.");
+      Alert.alert("Error", "Please fill in all fields.");
       return;
     }
 
     const emailRegex = /\S+@\S+\.\S+/;
     if (!emailRegex.test(email)) {
-      Alert.alert("Erreur", "Veuillez entrer un email valide.");
+      Alert.alert("Error", "Please enter a valid email.");
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert("Erreur", "Le mot de passe doit contenir au moins 6 caractères.");
+      Alert.alert("Error", "Password must be at least 6 characters long.");
       return;
     }
 
@@ -47,8 +47,8 @@ export default function SignUpScreen({ navigation }) {
       });
 
       Alert.alert(
-          "Succès",
-          "Inscription réussie ! Un code de vérification vient de vous être envoyé.",
+          "Success",
+          "Registration successful! A verification code has just been sent to you.",
           [
             {
               text: "OK",
@@ -60,9 +60,9 @@ export default function SignUpScreen({ navigation }) {
       console.log("Erreur inscription :", error?.response?.data || error);
 
       if (error?.response?.status === 400) {
-        Alert.alert("Erreur", "Cet email est déjà utilisé.");
+        Alert.alert("Error", "This email is already in use.");
       } else {
-        Alert.alert("Erreur", "Impossible de vous inscrire. Merci de réessayer.");
+        Alert.alert("Error", "Unable to register. Please try again.");
       }
     } finally {
       setLoading(false);

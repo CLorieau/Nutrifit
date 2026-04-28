@@ -8,13 +8,13 @@ export default function StartScreen({ navigation }) {
       style={styles.background}
     >
       <View style={styles.container}>
-        <Text style={styles.text}>Trouve le programme{"\n"}qui te convient</Text>
+        <Text style={styles.text}>Find the program{"\n"}that suits you</Text>
 
         <TouchableOpacity
           style={styles.button}
           onPress={() => navigation.navigate("Gender")}
         >
-          <Text style={styles.buttonText}>Lance-toi !</Text>
+          <Text style={styles.buttonText}>Get Started!</Text>
         </TouchableOpacity>
       </View>
     </ImageBackground>

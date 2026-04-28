@@ -26,7 +26,7 @@ import {
   removeFriend
 } from "../api/social";
 
-const TABS = ["Mes Amis", "Demandes", "Rechercher"];
+const TABS = ["My Friends", "Requests", "Search"];
 // ⚠️ FIX : La pastille est maintenant pilotée par le vrai état `requests.length` (plus de mock statique)
 
 // ─── CARTE UTILISATEUR ────────────────────────────────────────────────────────
@@ -71,24 +71,24 @@ function UserCard({ user, onAction, actionType, onCardPress }) {
       {/* Dynamic Actions based on tab */}
       {actionType === 'FRIEND' && (
          <TouchableOpacity style={styles.actionBtnOutline} onPress={handleAction} disabled={loading}>
-            {loading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.actionBtnTextOutline}>Retirer</Text>}
+            {loading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.actionBtnTextOutline}>Remove</Text>}
          </TouchableOpacity>
       )}
 
       {actionType === 'REQUEST' && (
          <View style={{ flexDirection: 'row', gap: 8 }}>
             <TouchableOpacity style={styles.actionBtnOutline} onPress={() => onAction(user, 'REJECT')} disabled={loading}>
-              <Text style={styles.actionBtnTextOutline}>Refuser</Text>
+              <Text style={styles.actionBtnTextOutline}>Decline</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionBtnPrimary} onPress={() => onAction(user, 'ACCEPT')} disabled={loading}>
-              <Text style={styles.actionBtnTextPrimary}>Accepter</Text>
+              <Text style={styles.actionBtnTextPrimary}>Accept</Text>
             </TouchableOpacity>
          </View>
       )}
 
       {actionType === 'SEARCH' && (
          <TouchableOpacity style={styles.actionBtnPrimary} onPress={handleAction} disabled={loading}>
-            {loading ? <ActivityIndicator size="small" color="#000" /> : <Text style={styles.actionBtnTextPrimary}>Ajouter</Text>}
+            {loading ? <ActivityIndicator size="small" color="#000" /> : <Text style={styles.actionBtnTextPrimary}>Add</Text>}
          </TouchableOpacity>
       )}
 
@@ -141,9 +141,9 @@ export default function CommunityScreen() {
 
   // -- Mes amis action
   const handleRemoveFriend = async (user) => {
-    Alert.alert("Retirer l'ami", `Voulez-vous vraiment retirer ${user.prenom} de vos amis ?`, [
-        { text: "Annuler", style: "cancel" },
-        { text: "Retirer", style: "destructive", onPress: async () => {
+    Alert.alert("Remove friend", `Are you sure you want to remove ${user.prenom} from your friends?`, [
+        { text: "Cancel", style: "cancel" },
+        { text: "Remove", style: "destructive", onPress: async () => {
              await removeFriend(user.id_utilisateur);
              setFriends(prev => prev.filter(u => u.id_utilisateur !== user.id_utilisateur));
         }}
@@ -180,7 +180,7 @@ export default function CommunityScreen() {
 
   const handleAddFriend = async (user) => {
       await sendFriendRequest(user.id_utilisateur);
-      Alert.alert("Succès", `Demande d'ami envoyée à ${user.prenom}`);
+      Alert.alert("Success", `Friend request sent to ${user.prenom}`);
       setSearchResults(prev => prev.filter(u => u.id_utilisateur !== user.id_utilisateur));
   };
 
@@ -195,7 +195,7 @@ export default function CommunityScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
            <Ionicons name="chevron-back" size={28} color="#0A0A0A" />
         </TouchableOpacity>
-        <Text style={styles.title}>Communauté</Text>
+        <Text style={styles.title}>Community</Text>
       </View>
 
       {/* Tabs */}
@@ -238,7 +238,7 @@ export default function CommunityScreen() {
                   />
                )}
                keyExtractor={(item) => String(item.id_utilisateur)}
-               ListEmptyComponent={<Text style={styles.emptyText}>Vous n'avez pas encore d'amis.</Text>}
+               ListEmptyComponent={<Text style={styles.emptyText}>You don't have any friends yet.</Text>}
             />
         )}
 
@@ -249,7 +249,7 @@ export default function CommunityScreen() {
                data={requests}
                renderItem={({item}) => <UserCard user={item} onAction={handleRequestAction} actionType="REQUEST" />}
                keyExtractor={(item) => String(item.id_utilisateur)}
-               ListEmptyComponent={<Text style={styles.emptyText}>Aucune demande d'ami en attente.</Text>}
+               ListEmptyComponent={<Text style={styles.emptyText}>No pending friend requests.</Text>}
             />
         )}
 
@@ -260,7 +260,7 @@ export default function CommunityScreen() {
                    <Ionicons name="search-outline" size={18} color="#888" style={{ marginRight: 8 }} />
                    <TextInput
                      style={styles.searchInput}
-                     placeholder="Rechercher par nom…"
+                     placeholder="Search by name..."
                      placeholderTextColor="#888"
                      value={searchQuery}
                      onChangeText={handleSearch}
@@ -271,7 +271,7 @@ export default function CommunityScreen() {
                {searchLoading && <ActivityIndicator color="#A3FF3D" style={{marginTop: 20}} />}
                
                {!searchLoading && searchQuery.length >= 2 && searchResults.length === 0 && (
-                   <Text style={styles.emptyText}>Aucun utilisateur trouvé</Text>
+                   <Text style={styles.emptyText}>No user found</Text>
                )}
 
                <FlatList 

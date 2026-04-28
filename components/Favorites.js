@@ -40,8 +40,8 @@ export default function Favorites() {
     } catch (error) {
       // If 404, it might mean no favorites or endpoint issue.
       // Assuming empty list if error or 404 for now, or just log.
-      console.error("Erreur chargement favoris:", error);
-      // Alert.alert("Erreur", "Impossible de charger les favoris.");
+      console.error("Error loading favorites:", error);
+      // Alert.alert("Error", "Unable to load favorites.");
     } finally {
       setLoading(false);
     }
@@ -55,8 +55,8 @@ export default function Favorites() {
 
       await deleteFavorites(id);
     } catch (error) {
-      console.error("Erreur suppression favori:", error);
-      Alert.alert("Erreur", "Impossible de supprimer le favori.");
+      console.error("Error deleting favorite:", error);
+      Alert.alert("Error", "Unable to remove favorite.");
       fetchFavorites(); // Revert/Refresh
     }
   };
@@ -113,7 +113,7 @@ export default function Favorites() {
         <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#000" />
         </Pressable>
-        <Text style={styles.headerTitle}>Mes Favoris</Text>
+        <Text style={styles.headerTitle}>My Favorites</Text>
       </View>
 
       {loading ? (
@@ -131,7 +131,7 @@ export default function Favorites() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="heart-dislike-outline" size={48} color="#ccc" />
-              <Text style={styles.emptyText}>Aucun favori pour le moment.</Text>
+              <Text style={styles.emptyText}>No favorites yet.</Text>
             </View>
           }
         />

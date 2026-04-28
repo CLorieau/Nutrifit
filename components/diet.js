@@ -38,42 +38,38 @@ export default function Diet({ navigation }) {
   const [liked, setLiked] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [allRecipes, setAllRecipes] = useState([]);
+  const [popularRecipes, setPopularRecipes] = useState([]);
 
   // ————— API CALL
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [recipesRes, favRes] = await Promise.all([
+      const [recipesRes, popularRes, favRes] = await Promise.all([
         api.get("/recettes"),
+        api.get("/recettes?sort=popular"),
         getFavorites(),
       ]);
 
       const recipesData = recipesRes.data;
+      const popularData = popularRes.data;
       const favData = favRes.data || [];
 
-      // Create a set of favorite IDs
-      // Assuming getFavorites returns list of recipes or objects with id_recette
-      // If favData is list of recipes:
       const favIds = new Set(favData.map((r) => r.id_recette));
       setLiked(favIds);
 
-      // Mapping des données
-      const mapped = recipesData.map((r) => ({
+      const mapper = (r) => ({
         id: r.id_recette,
         title: r.nom_recette,
         kcalPer100: r.calories,
         image: r.image_url,
-        // liked: favIds.has(r.id_recette),
-        // -> On gère "liked" via le state 'liked' (Set), donc on n'a pas forcément besoin de le mettre dans l'objet
-        // mais pour l'affichage initial c'est pratique.
-        // Ici on va se baser sur le Set 'liked' dans le useMemo 'filtered'.
         ingredients: r.ingredients,
-      }));
+      });
 
-      setAllRecipes(mapped);
+      setAllRecipes(recipesData.map(mapper));
+      setPopularRecipes(popularData.map(mapper));
     } catch (error) {
       console.error("Erreur chargement données:", error);
-      Alert.alert("Erreur", "Impossible de charger les données.");
+      Alert.alert("Error", "Unable to load data.");
     } finally {
       setLoading(false);
     }
@@ -86,19 +82,23 @@ export default function Diet({ navigation }) {
   );
 
   // ————— DONNÉES AFFICHÉES (filtrage par recherche)
-  // On sépare en deux listes arbitrairement pour l'UI (ex: 5 premiers = most loved)
-  const filtered = useMemo(() => {
+  const mostLoved = useMemo(() => {
+    let list = popularRecipes;
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      list = list.filter((r) => r.title.toLowerCase().includes(q));
+    }
+    return list.map((r) => ({ ...r, liked: liked.has(r.id) }));
+  }, [query, popularRecipes, liked]);
+
+  const forYou = useMemo(() => {
     let list = allRecipes;
     if (query.trim()) {
       const q = query.toLowerCase();
       list = list.filter((r) => r.title.toLowerCase().includes(q));
     }
-    // Mise à jour de l'état "liked" local
     return list.map((r) => ({ ...r, liked: liked.has(r.id) }));
   }, [query, allRecipes, liked]);
-
-  const mostLoved = useMemo(() => filtered.slice(0, 5), [filtered]);
-  const forYou = useMemo(() => filtered.slice(5), [filtered]);
 
   // ————— ACTIONS
   // ————— ACTIONS
@@ -129,7 +129,7 @@ export default function Diet({ navigation }) {
         else next.delete(id); // was not liked, so remove
         return next;
       });
-      Alert.alert("Erreur", "Impossible de modifier les favoris.");
+      Alert.alert("Error", "Unable to modify favorites.");
     }
   };
 
@@ -141,8 +141,8 @@ export default function Diet({ navigation }) {
 
   const onAdd = () => {
     Alert.alert(
-      "Créer une recette",
-      "On fera un formulaire d'ajout plus tard.",
+      "Create a recipe",
+      "We will make an addition form later.",
     );
   };
 
@@ -381,7 +381,7 @@ export default function Diet({ navigation }) {
                 >
                   <Ionicons name="leaf-outline" size={28} />
                   <Text style={{ marginTop: 8, color: "#6B7280" }}>
-                    Aucune recette ne correspond à ta recherche
+                    No recipe matches your search
                   </Text>
                 </View>
               }

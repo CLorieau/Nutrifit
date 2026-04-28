@@ -426,34 +426,34 @@ export default function Training() {
       <View style={styles.disclaimerOverlay}>
         <View style={styles.disclaimerBox}>
           <Text style={styles.disclaimerEmoji}>⚠️</Text>
-          <Text style={styles.disclaimerTitle}>Avant de commencer</Text>
+          <Text style={styles.disclaimerTitle}>Before starting</Text>
 
           <View style={styles.disclaimerItem}>
             <Ionicons name="ear-outline" size={20} color="#A3FF3D" style={{ marginTop: 2 }} />
             <Text style={styles.disclaimerText}>
-              Écoutez votre corps. Si vous ressentez une douleur anormale, arrêtez l’exercice immédiatement.
+              Listen to your body. If you feel abnormal pain, stop the exercise immediately.
             </Text>
           </View>
 
           <View style={styles.disclaimerItem}>
             <Ionicons name="flame-outline" size={20} color="#A3FF3D" style={{ marginTop: 2 }} />
             <Text style={styles.disclaimerText}>
-              N’oubliez pas de vous échauffer avant de commencer !
+              Don't forget to warm up before starting!
             </Text>
           </View>
 
           <View style={styles.disclaimerItem}>
             <Ionicons name="water-outline" size={20} color="#A3FF3D" style={{ marginTop: 2 }} />
             <Text style={styles.disclaimerText}>
-              Hydratez-vous régulièrement pendant l’effort.
+              Stay hydrated during the effort.
             </Text>
           </View>
 
           <TouchableOpacity style={styles.disclaimerBtn} onPress={confirmStartWorkout} activeOpacity={0.85}>
-            <Text style={styles.disclaimerBtnText}>J’ai compris — Démarrer 💪</Text>
+            <Text style={styles.disclaimerBtnText}>Understood — Start 💪</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.disclaimerCancel} onPress={() => setShowDisclaimer(false)}>
-            <Text style={styles.disclaimerCancelText}>Annuler</Text>
+            <Text style={styles.disclaimerCancelText}>Cancel</Text>
           </TouchableOpacity>
         </View>
       </View>

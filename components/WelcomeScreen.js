@@ -18,9 +18,9 @@ export default function WelcomeScreen() {
                 <View style={styles.content}>
                     <Text style={styles.titre}>Welcome.</Text>
                     <Text style={styles.subtitle}>
-                        Des repas adaptés a votre corps, 
-                        des entrainements pensés pour vous.
-                        Tout en un seul endroit
+                        Meals tailored to your body, 
+                        workouts designed for you.
+                        All in one place
                     </Text>
                     <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('SignUp')}>
                     <Text style={styles.buttonText}>Sign Up</Text>

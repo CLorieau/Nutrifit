@@ -61,12 +61,12 @@ export default function EditProfile() {
 
             await updateProfile(payload);
 
-            Alert.alert("Succès", "Profil mis à jour", [
+            Alert.alert("Success", "Profile updated", [
                 { text: "OK", onPress: () => navigation.goBack() }
             ]);
         } catch (error) {
             console.error("Update failed", error);
-            Alert.alert("Erreur", "Impossible de mettre à jour le profil.");
+            Alert.alert("Error", "Unable to update profile.");
         } finally {
             setLoading(false);
         }
@@ -83,30 +83,30 @@ export default function EditProfile() {
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                         <Ionicons name="arrow-back" size={24} color="#fff" />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Modifier mon profil</Text>
+                    <Text style={styles.headerTitle}>Edit my profile</Text>
                     <View style={{ width: 24 }} />
                 </View>
 
                 <ScrollView contentContainerStyle={styles.content}>
 
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Prénom</Text>
+                        <Text style={styles.label}>First name</Text>
                         <TextInput
                             style={styles.input}
                             value={form.prenom}
                             onChangeText={(t) => handleChange('prenom', t)}
-                            placeholder="Votre prénom"
+                            placeholder="Your first name"
                             placeholderTextColor="#666"
                         />
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Nom</Text>
+                        <Text style={styles.label}>Last name</Text>
                         <TextInput
                             style={styles.input}
                             value={form.nom}
                             onChangeText={(t) => handleChange('nom', t)}
-                            placeholder="Votre nom"
+                            placeholder="Your last name"
                             placeholderTextColor="#666"
                         />
                     </View>
@@ -125,13 +125,13 @@ export default function EditProfile() {
                         </View>
 
                         <View style={[styles.inputGroup, { flex: 1, marginLeft: 10 }]}>
-                            <Text style={styles.label}>Poids (kg)</Text>
+                            <Text style={styles.label}>Weight (kg)</Text>
                             <TextInput
                                 style={styles.input}
                                 value={form.poids_kg}
                                 onChangeText={(t) => handleChange('poids_kg', t)}
                                 keyboardType="numeric"
-                                placeholder="Poids"
+                                placeholder="Weight"
                                 placeholderTextColor="#666"
                             />
                         </View>
@@ -145,7 +145,7 @@ export default function EditProfile() {
                         {loading ? (
                             <ActivityIndicator color="#000" />
                         ) : (
-                            <Text style={styles.saveButtonText}>Enregistrer</Text>
+                            <Text style={styles.saveButtonText}>Save</Text>
                         )}
                     </TouchableOpacity>
 

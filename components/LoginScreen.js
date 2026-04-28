@@ -22,18 +22,18 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Erreur", "Veuillez remplir tous les champs.");
+      Alert.alert("Error", "Please fill in all fields.");
       return;
     }
 
     const emailRegex = /\S+@\S+\.\S+/;
     if (!emailRegex.test(email)) {
-      Alert.alert("Erreur", "Veuillez entrer un email valide.");
+      Alert.alert("Error", "Please enter a valid email.");
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert("Erreur", "Le mot de passe doit contenir au moins 6 caractères.");
+      Alert.alert("Error", "Password must be at least 6 characters long.");
       return;
     }
 
@@ -62,23 +62,23 @@ export default function LoginScreen({ navigation }) {
       const status = error?.response?.status;
 
       if (status === 401) {
-        Alert.alert("Erreur", "Email ou mot de passe incorrect.");
+        Alert.alert("Error", "Incorrect email or password.");
       } else if (status === 403) {
         Alert.alert(
-            "Compte non vérifié",
-            "Votre email n'a pas encore été vérifié. Veuillez vérifier vos emails."
+            "Unverified Account",
+            "Your email has not been verified yet. Please check your emails."
         );
       } else if (status === 404) {
-        Alert.alert("Erreur", "Utilisateur introuvable.");
+        Alert.alert("Error", "User not found.");
       } else if (status === 422) {
         Alert.alert(
-            "Erreur",
-            "Les données envoyées ne sont pas valides (champ manquant ou mal nommé)."
+            "Error",
+            "Invalid data sent (missing or incorrectly named field)."
         );
       } else {
         Alert.alert(
-            "Erreur",
-            "Impossible de vous connecter pour le moment. Veuillez réessayer."
+            "Error",
+            "Unable to log in at this time. Please try again."
         );
       }
     } finally {

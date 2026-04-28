@@ -21,20 +21,20 @@ export default function VerifyCodeScreen({ route, navigation }) {
 
     const handleVerify = async () => {
         if (!code) {
-            Alert.alert("Erreur", "Veuillez saisir le code reçu par e-mail.");
+            Alert.alert("Error", "Please enter the code received by email.");
             return;
         }
 
         if (!email) {
             Alert.alert(
-                "Erreur",
-                "Email introuvable. Veuillez recommencer l'inscription."
+                "Error",
+                "Email not found. Please restart registration."
             );
             return;
         }
 
         if (code.length !== 6) {
-            Alert.alert("Erreur", "Le code doit contenir 6 chiffres.");
+            Alert.alert("Error", "The code must contain 6 digits.");
             return;
         }
 
@@ -47,8 +47,8 @@ export default function VerifyCodeScreen({ route, navigation }) {
             });
 
             Alert.alert(
-                "Succès",
-                "Compte vérifié avec succès ! Vous pouvez maintenant vous connecter.",
+                "Success",
+                "Account verified successfully! You can now log in.",
                 [
                     {
                         text: "OK",
@@ -62,13 +62,13 @@ export default function VerifyCodeScreen({ route, navigation }) {
             const status = error?.response?.status;
 
             if (status === 400) {
-                Alert.alert("Erreur", "Code incorrect ou expiré.");
+                Alert.alert("Error", "Incorrect or expired code.");
             } else if (status === 404) {
-                Alert.alert("Erreur", "Utilisateur introuvable pour cet email.");
+                Alert.alert("Error", "User not found for this email.");
             } else {
                 Alert.alert(
-                    "Erreur",
-                    "Impossible de vérifier le code pour le moment. Veuillez réessayer."
+                    "Error",
+                    "Unable to verify the code at this time. Please try again."
                 );
             }
         } finally {
@@ -87,7 +87,7 @@ export default function VerifyCodeScreen({ route, navigation }) {
 
                 {email && (
                     <Text style={styles.subtitle}>
-                        Un code a été envoyé à{"\n"}
+                        A code has been sent to{"\n"}
                         <Text style={{ fontWeight: "bold" }}>{email}</Text>
                     </Text>
                 )}
@@ -120,7 +120,7 @@ export default function VerifyCodeScreen({ route, navigation }) {
                     style={styles.footer}
                     onPress={() => navigation.navigate("Login")}
                 >
-                    Retour à la connexion
+                    Back to login
                 </Text>
             </View>
         </ImageBackground>

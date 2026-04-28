@@ -474,8 +474,8 @@ export default function Calendar({ initialDate = new Date(), onDateChange }) {
                 <Text style={{ fontSize: 22 }}>💤</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.restCardTitle}>Jour de Repos</Text>
-                <Text style={styles.restCardSub}>La récupération fait partie de l’entraînement !</Text>
+                <Text style={styles.restCardTitle}>Rest Day</Text>
+                <Text style={styles.restCardSub}>Recovery is part of training!</Text>
               </View>
               {/* Checkbox validation repos */}
               <TouchableOpacity
@@ -488,7 +488,7 @@ export default function Calendar({ initialDate = new Date(), onDateChange }) {
             {restValidated && (
               <View style={styles.restValidatedBanner}>
                 <Text style={{ fontSize: 20 }}>🎉</Text>
-                <Text style={styles.restValidatedText}>Repos validé ! Votre corps vous remercie.</Text>
+                <Text style={styles.restValidatedText}>Rest validated! Your body thanks you.</Text>
               </View>
             )}
           </View>
@@ -503,8 +503,8 @@ export default function Calendar({ initialDate = new Date(), onDateChange }) {
                   <Text style={{ fontSize: 22 }}>💤</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.restCardTitle}>Pas de sport aujourd’hui</Text>
-                  <Text style={styles.restCardSub}>Validez votre repos actif 💪</Text>
+                  <Text style={styles.restCardTitle}>No workout today</Text>
+                  <Text style={styles.restCardSub}>Validate your active rest 💪</Text>
                 </View>
                 <TouchableOpacity
                   onPress={toggleRest}

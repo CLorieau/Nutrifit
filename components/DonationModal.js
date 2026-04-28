@@ -26,10 +26,10 @@ const PRESET_AMOUNTS = [
 
 // Cartes de test officielles Stripe
 const TEST_CARDS = [
-  { number: "4242 4242 4242 4242", label: "✅ Succès" },
-  { number: "4000 0000 0000 9995", label: "❌ Refusé (fonds insuffisants)" },
-  { number: "4000 0000 0000 0002", label: "❌ Refusé (générique)" },
-  { number: "5555 5555 5555 4444", label: "✅ Succès (Mastercard)" },
+  { number: "4242 4242 4242 4242", label: "✅ Success" },
+  { number: "4000 0000 0000 9995", label: "❌ Declined (insufficient funds)" },
+  { number: "4000 0000 0000 0002", label: "❌ Declined (generic)" },
+  { number: "5555 5555 5555 4444", label: "✅ Success (Mastercard)" },
 ];
 
 export default function DonationModal({ visible, onClose }) {
@@ -86,15 +86,15 @@ export default function DonationModal({ visible, onClose }) {
 
     // Validation basique du formulaire (format uniquement)
     if (rawCard.length !== 16) {
-      setErrorMsg("Le numéro de carte doit contenir 16 chiffres.");
+      setErrorMsg("The card number must contain 16 digits.");
       return;
     }
     if (!expiry.includes("/") || expiry.length < 5) {
-      setErrorMsg("Date d'expiration invalide (format MM/AA).");
+      setErrorMsg("Invalid expiry date (MM/YY format).");
       return;
     }
     if (cvc.length < 3) {
-      setErrorMsg("Le CVC doit contenir au moins 3 chiffres.");
+      setErrorMsg("The CVC must contain at least 3 digits.");
       return;
     }
 
@@ -111,14 +111,14 @@ export default function DonationModal({ visible, onClose }) {
         setStep("success");
       } else {
         // Stripe a refusé la carte (vrai refus, pas une simulation locale)
-        setErrorMsg(data.error || "Paiement refusé par Stripe.");
+        setErrorMsg(data.error || "Payment declined by Stripe.");
         setDeclineCode(data.decline_code || null);
         setStep("error");
       }
     } catch (err) {
       // Erreur HTTP (carte non reconnue, clé Stripe invalide, réseau…)
       const detail = err?.response?.data?.detail;
-      setErrorMsg(detail || "Erreur de connexion au serveur.");
+      setErrorMsg(detail || "Server connection error.");
       setStep("error");
     }
   };
@@ -148,15 +148,15 @@ export default function DonationModal({ visible, onClose }) {
               <View style={styles.iconCircle}>
                 <Ionicons name="heart" size={32} color={ACCENT} />
               </View>
-              <Text style={styles.title}>Faire un don 💚</Text>
+              <Text style={styles.title}>Make a donation 💚</Text>
               <Text style={styles.subtitle}>
-                Soutiens le développement de NutriFit.{"\n"}
+                Support NutriFit's development.{"\n"}
                 <Text style={styles.sandboxBadge}>
-                  🧪 Mode sandbox — aucun vrai paiement
+                  🧪 Sandbox mode — no real payment
                 </Text>
               </Text>
 
-              <Text style={styles.label}>Choisis un montant :</Text>
+              <Text style={styles.label}>Choose an amount:</Text>
               <View style={styles.amountsGrid}>
                 {PRESET_AMOUNTS.map((a) => (
                   <TouchableOpacity
@@ -185,7 +185,7 @@ export default function DonationModal({ visible, onClose }) {
               <View style={styles.infoBox}>
                 <Text style={styles.infoTitle}>
                   <Ionicons name="information-circle-outline" size={13} />{" "}
-                  Cartes de test Stripe acceptées :
+                  Accepted Stripe test cards:
                 </Text>
                 {TEST_CARDS.map((c) => (
                   <Text key={c.number} style={styles.infoItem}>
@@ -195,7 +195,7 @@ export default function DonationModal({ visible, onClose }) {
                   </Text>
                 ))}
                 <Text style={styles.infoNote}>
-                  ⚠️ Tout autre numéro sera refusé par Stripe.
+                  ⚠️ Any other number will be declined by Stripe.
                 </Text>
               </View>
 
@@ -209,7 +209,7 @@ export default function DonationModal({ visible, onClose }) {
                 activeOpacity={0.85}
               >
                 <Text style={styles.ctaBtnText}>
-                  Continuer {selectedAmount ? `— ${selectedAmount.label}` : ""}
+                  Continue {selectedAmount ? `— ${selectedAmount.label}` : ""}
                 </Text>
                 <Ionicons name="arrow-forward" size={18} color="#000" />
               </TouchableOpacity>
@@ -224,20 +224,20 @@ export default function DonationModal({ visible, onClose }) {
                 onPress={() => setStep("amount")}
               >
                 <Ionicons name="arrow-back" size={18} color={TEXT_MUTED} />
-                <Text style={styles.backBtnText}>Retour</Text>
+                <Text style={styles.backBtnText}>Back</Text>
               </TouchableOpacity>
 
-              <Text style={styles.title}>Informations de paiement</Text>
+              <Text style={styles.title}>Payment Information</Text>
               <Text style={styles.subtitle}>
-                Donation de{" "}
+                Donation of{" "}
                 <Text style={{ color: ACCENT, fontWeight: "800" }}>
                   {selectedAmount?.label}
                 </Text>{" "}
-                · Sandbox Stripe
+                · Stripe Sandbox
               </Text>
 
               {/* Raccourcis cartes de test */}
-              <Text style={styles.label}>Remplir avec une carte de test :</Text>
+              <Text style={styles.label}>Fill with a test card:</Text>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -255,7 +255,7 @@ export default function DonationModal({ visible, onClose }) {
               </ScrollView>
 
               {/* Formulaire */}
-              <Text style={styles.label}>Titulaire de la carte</Text>
+              <Text style={styles.label}>Cardholder Name</Text>
               <TextInput
                 style={styles.input}
                 placeholder="John Doe"
@@ -265,7 +265,7 @@ export default function DonationModal({ visible, onClose }) {
                 autoCapitalize="words"
               />
 
-              <Text style={styles.label}>Numéro de carte</Text>
+              <Text style={styles.label}>Card Number</Text>
               <View style={styles.inputWithIcon}>
                 <Ionicons
                   name="card-outline"
@@ -286,7 +286,7 @@ export default function DonationModal({ visible, onClose }) {
 
               <View style={styles.row}>
                 <View style={{ flex: 1, marginRight: 10 }}>
-                  <Text style={styles.label}>Expiration</Text>
+                  <Text style={styles.label}>Expiry</Text>
                   <TextInput
                     style={styles.input}
                     placeholder="MM/AA"
@@ -330,12 +330,12 @@ export default function DonationModal({ visible, onClose }) {
                   style={{ marginRight: 6 }}
                 />
                 <Text style={styles.ctaBtnText}>
-                  Simuler le don — {selectedAmount?.label}
+                  Simulate donation — {selectedAmount?.label}
                 </Text>
               </TouchableOpacity>
 
               <Text style={styles.secureNote}>
-                🔒 Validation via Stripe sandbox — aucune donnée réelle transmise
+                🔒 Validation via Stripe sandbox — no real data transmitted
               </Text>
             </ScrollView>
           )}
@@ -344,9 +344,9 @@ export default function DonationModal({ visible, onClose }) {
           {step === "processing" && (
             <View style={styles.centerContent}>
               <ActivityIndicator size="large" color={ACCENT} />
-              <Text style={styles.processingText}>Traitement Stripe…</Text>
+              <Text style={styles.processingText}>Processing Stripe…</Text>
               <Text style={styles.processingSubtext}>
-                Le serveur valide ta carte en mode sandbox
+                The server is validating your card in sandbox mode
               </Text>
             </View>
           )}
@@ -357,13 +357,13 @@ export default function DonationModal({ visible, onClose }) {
               <View style={styles.successCircle}>
                 <Ionicons name="checkmark" size={44} color="#000" />
               </View>
-              <Text style={styles.title}>Don simulé ! 🎉</Text>
+              <Text style={styles.title}>Simulated donation! 🎉</Text>
               <Text style={styles.subtitle}>
-                Ton don de{" "}
+                Your donation of{" "}
                 <Text style={{ color: ACCENT, fontWeight: "800" }}>
                   {selectedAmount?.label}
                 </Text>{" "}
-                a été validé par Stripe.
+                has been validated by Stripe.
               </Text>
               {paymentIntentId && (
                 <Text style={styles.piText}>
@@ -371,13 +371,13 @@ export default function DonationModal({ visible, onClose }) {
                 </Text>
               )}
               <Text style={styles.sandboxBadge}>
-                🧪 Aucun vrai paiement n'a été effectué
+                🧪 No real payment was made
               </Text>
               <TouchableOpacity
                 style={[styles.ctaBtn, { marginTop: 28 }]}
                 onPress={handleClose}
               >
-                <Text style={styles.ctaBtnText}>Fermer</Text>
+                <Text style={styles.ctaBtnText}>Close</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -388,10 +388,10 @@ export default function DonationModal({ visible, onClose }) {
               <View style={styles.errorCircle}>
                 <Ionicons name="close" size={44} color="#fff" />
               </View>
-              <Text style={styles.title}>Paiement refusé</Text>
+              <Text style={styles.title}>Payment declined</Text>
               <Text style={styles.subtitle}>{errorMsg}</Text>
               {declineCode && (
-                <Text style={styles.declineCode}>Code : {declineCode}</Text>
+                <Text style={styles.declineCode}>Code: {declineCode}</Text>
               )}
               <TouchableOpacity
                 style={[styles.ctaBtn, { marginTop: 20 }]}
@@ -401,10 +401,10 @@ export default function DonationModal({ visible, onClose }) {
                   setDeclineCode(null);
                 }}
               >
-                <Text style={styles.ctaBtnText}>Réessayer</Text>
+                <Text style={styles.ctaBtnText}>Try again</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.outlineBtn} onPress={handleClose}>
-                <Text style={styles.outlineBtnText}>Annuler</Text>
+                <Text style={styles.outlineBtnText}>Cancel</Text>
               </TouchableOpacity>
             </View>
           )}

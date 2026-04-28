@@ -96,12 +96,12 @@ export default function RecipeDetail({ route, navigation }) {
     try {
       const p_id = currentRecipe?.id_recette || currentRecipe?.id || recipeId;
       if (!p_id) {
-          Alert.alert("Erreur", "L'identifiant de la recette est introuvable.");
+          Alert.alert("Error", "The recipe ID could not be found.");
           return;
       }
       
       await shareRecipe(p_id, selectedFriends);
-      Alert.alert("Succès", `Recette partagée avec succès à ${selectedFriends.length} ami(s) !`);
+      Alert.alert("Success", `Recipe successfully shared with ${selectedFriends.length} friend(s)!`);
       setShareVisible(false);
       setSelectedFriends([]);
     } catch (error) {
@@ -109,9 +109,9 @@ export default function RecipeDetail({ route, navigation }) {
       
       const errorMsg = error.response?.data 
         ? JSON.stringify(error.response.data) 
-        : "Impossible de partager la recette.";
+        : "Unable to share the recipe.";
         
-      Alert.alert("Erreur API", errorMsg);
+      Alert.alert("API Error", errorMsg);
     }
   };
 
@@ -147,7 +147,7 @@ export default function RecipeDetail({ route, navigation }) {
           backgroundColor: "#F5F5F7",
         }}
       >
-        <Text>Recette introuvable.</Text>
+        <Text>Recipe not found.</Text>
       </View>
     );
   }
@@ -270,7 +270,7 @@ export default function RecipeDetail({ route, navigation }) {
 
           {ingredients.length === 0 ? (
             <Text style={{ fontStyle: "italic", color: "#666" }}>
-              Pas d'ingrédients listés.
+              No ingredients listed.
             </Text>
           ) : (
             <View style={{ marginTop: 4 }}>
@@ -308,7 +308,7 @@ export default function RecipeDetail({ route, navigation }) {
                     >
                       {ing.food
                         ? ing.food.charAt(0).toUpperCase() + ing.food.slice(1)
-                        : "Ingrédient"}
+                        : "Ingredient"}
                     </Text>
                     <Text
                       style={{
@@ -332,7 +332,7 @@ export default function RecipeDetail({ route, navigation }) {
         <View style={styles.modalOverlay}>
             <View style={styles.bottomSheet}>
                 <View style={styles.sheetHeader}>
-                    <Text style={styles.sheetTitle}>Partager cette recette</Text>
+                    <Text style={styles.sheetTitle}>Share this recipe</Text>
                     <TouchableOpacity onPress={() => setShareVisible(false)}>
                         <Ionicons name="close-circle-outline" size={28} color="#888" />
                     </TouchableOpacity>
@@ -342,7 +342,7 @@ export default function RecipeDetail({ route, navigation }) {
                    <Ionicons name="search" size={18} color="#888" style={{marginRight:8}} />
                    <TextInput 
                       style={styles.searchInput}
-                      placeholder="Rechercher un ami..."
+                      placeholder="Search for a friend..."
                       placeholderTextColor="#888"
                       value={searchQuery}
                       onChangeText={setSearchQuery}
@@ -366,13 +366,13 @@ export default function RecipeDetail({ route, navigation }) {
                      )
                    }}
                    contentContainerStyle={{ paddingBottom: 100 }}
-                   ListEmptyComponent={<Text style={styles.emptyText}>Aucun ami trouvé.</Text>}
+                   ListEmptyComponent={<Text style={styles.emptyText}>No friends found.</Text>}
                 />
 
                 {selectedFriends.length > 0 && (
                   <View style={styles.floatingActionContainer}>
                     <TouchableOpacity style={styles.shareActionBtn} onPress={handleShare}>
-                        <Text style={styles.shareActionBtnText}>Partager à {selectedFriends.length} ami(s)</Text>
+                        <Text style={styles.shareActionBtnText}>Share with {selectedFriends.length} friend(s)</Text>
                     </TouchableOpacity>
                   </View>
                 )}

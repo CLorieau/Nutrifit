@@ -128,17 +128,16 @@ export default function Profile() {
     ]);
   };
 
-  // Fonctionnalité 5 : suppression du compte (MOCK — prêt pour DELETE /users/{id})
   const handleDeleteAccount = async () => {
-    if (deleteConfirmText.trim().toUpperCase() !== "SUPPRIMER") return;
+    if (deleteConfirmText.trim().toUpperCase() !== "DELETE") return;
     setDeletingAccount(true);
     try {
-      // MOCK — remplacer par : await api.delete(`/users/${userData.id_utilisateur}`);
-      await new Promise((r) => setTimeout(r, 1200));
+      const api = require("../api/axiosInstance").default;
+      await api.delete("/users/me");
       setShowDeleteModal(false);
       await signOut();
     } catch (e) {
-      Alert.alert("Erreur", "Impossible de supprimer le compte.");
+      Alert.alert("Error", "Unable to delete account.");
     } finally {
       setDeletingAccount(false);
     }
@@ -493,7 +492,7 @@ export default function Profile() {
 
       {/* ─── BIEN-ÊTRE & ACCESSIBILITÉ ─── */}
       <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle}>Bien-être & Accessibilité</Text>
+        <Text style={styles.sectionTitle}>Wellbeing & Accessibility</Text>
         <View style={styles.menuCard}>
 
           {/* Fonctionnalité 1 : Mode Aveugle */}
@@ -502,8 +501,8 @@ export default function Profile() {
               <Ionicons name="eye-off-outline" size={19} color="#8B5CF6" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.menuLabel}>Mode Aveugle</Text>
-              <Text style={styles.menuSublabel}>Masque calories & macros</Text>
+              <Text style={styles.menuLabel}>Blind Mode</Text>
+              <Text style={styles.menuSublabel}>Hides calories & macros</Text>
             </View>
             <Switch
               value={blindMode}
@@ -526,9 +525,9 @@ export default function Profile() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.menuLabel}>
-                {accountPaused ? "Compte en pause ⏸" : "Mettre en pause"}
+                {accountPaused ? "Account paused ⏸" : "Pause account"}
               </Text>
-              <Text style={styles.menuSublabel}>Pour vacances ou récupération</Text>
+              <Text style={styles.menuSublabel}>For holidays or recovery</Text>
             </View>
             <View style={[styles.badge, { backgroundColor: "rgba(251,191,36,0.18)" }]}>
               <Text style={[styles.badgeText, { color: "#FBBF24" }]}>Exp.</Text>
@@ -540,16 +539,16 @@ export default function Profile() {
 
       {/* ─── ZONE DE DANGER RGPD ─── */}
       <View style={[styles.sectionContainer, { marginBottom: 30 }]}>
-        <Text style={[styles.sectionTitle, { color: "#FF4D4D" }]}>Zone de danger</Text>
+        <Text style={[styles.sectionTitle, { color: "#FF4D4D" }]}>Danger Zone</Text>
         <TouchableOpacity
           style={styles.deleteBtn}
           onPress={() => { setDeleteStep(1); setDeleteConfirmText(""); setShowDeleteModal(true); }}
           activeOpacity={0.8}
         >
           <Ionicons name="trash-outline" size={20} color="#fff" />
-          <Text style={styles.deleteBtnText}>Supprimer mon compte et mes données</Text>
+          <Text style={styles.deleteBtnText}>Delete my account and data</Text>
         </TouchableOpacity>
-        <Text style={styles.deleteHint}>Cette action est irréversible. Toutes vos données seront supprimées conformément au RGPD.</Text>
+        <Text style={styles.deleteHint}>This action is irreversible. All your data will be deleted in accordance with GDPR.</Text>
       </View>
     </ScrollView>
 
@@ -563,28 +562,34 @@ export default function Profile() {
       <View style={styles.modalOverlay}>
         <View style={styles.modalBox}>
           <Text style={styles.modalEmoji}>⏸️</Text>
-          <Text style={styles.modalTitle}>Mettre le compte en pause</Text>
+          <Text style={styles.modalTitle}>Pause account</Text>
           <Text style={styles.modalBody}>
-            Votre compte sera mis en pause. Vous ne perdrez pas votre place dans le classement et ne recevrez plus de notifications de rappel.{"\n\n"}Vous pouvez réactiver votre compte à tout moment.
+            Your account will be paused. You won't lose your ranking and won't receive reminder notifications.{"\n\n"}You can reactivate your account anytime.
           </Text>
           <View style={styles.modalBadgeRow}>
             <View style={[styles.badge, { backgroundColor: "rgba(251,191,36,0.18)", paddingHorizontal: 12, paddingVertical: 5 }]}>
-              <Text style={[styles.badgeText, { color: "#FBBF24", fontSize: 13 }]}>🧪 Fonctionnalité expérimentale</Text>
+              <Text style={[styles.badgeText, { color: "#FBBF24", fontSize: 13 }]}>🧪 Experimental feature</Text>
             </View>
           </View>
           <TouchableOpacity
             style={styles.modalPrimaryBtn}
-            onPress={() => {
-              setAccountPaused(!accountPaused);
-              setShowPauseModal(false);
+            onPress={async () => {
+              try {
+                const api = require("../api/axiosInstance").default;
+                await api.put("/users/me/pause", { paused: !accountPaused });
+                setAccountPaused(!accountPaused);
+                setShowPauseModal(false);
+              } catch (e) {
+                Alert.alert("Error", "Unable to update account status.");
+              }
             }}
           >
             <Text style={styles.modalPrimaryBtnText}>
-              {accountPaused ? "Réactiver mon compte" : "Activer la pause"}
+              {accountPaused ? "Reactivate my account" : "Activate pause"}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.modalSecondaryBtn} onPress={() => setShowPauseModal(false)}>
-            <Text style={styles.modalSecondaryBtnText}>Annuler</Text>
+            <Text style={styles.modalSecondaryBtnText}>Cancel</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -597,30 +602,30 @@ export default function Profile() {
           {deleteStep === 1 ? (
             <>
               <Text style={styles.modalEmoji}>⚠️</Text>
-              <Text style={[styles.modalTitle, { color: "#FF4D4D" }]}>Supprimer le compte</Text>
+              <Text style={[styles.modalTitle, { color: "#FF4D4D" }]}>Delete account</Text>
               <Text style={styles.modalBody}>
-                Cette action est <Text style={{ fontWeight: "800" }}>irréversible</Text>. Toutes vos données (profil, repas, séances, recettes) seront définitivement supprimées conformément au RGPD (Art. 17).
+                This action is <Text style={{ fontWeight: "800" }}>irreversible</Text>. All your data (profile, meals, sessions, recipes) will be permanently deleted in accordance with GDPR (Art. 17).
               </Text>
               <TouchableOpacity
                 style={[styles.modalPrimaryBtn, { backgroundColor: "#FF4D4D" }]}
                 onPress={() => setDeleteStep(2)}
               >
-                <Text style={styles.modalPrimaryBtnText}>Je comprends, continuer</Text>
+                <Text style={styles.modalPrimaryBtnText}>I understand, continue</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalSecondaryBtn} onPress={() => setShowDeleteModal(false)}>
-                <Text style={styles.modalSecondaryBtnText}>Annuler</Text>
+                <Text style={styles.modalSecondaryBtnText}>Cancel</Text>
               </TouchableOpacity>
             </>
           ) : (
             <>
               <Text style={styles.modalEmoji}>🔐</Text>
-              <Text style={[styles.modalTitle, { color: "#FF4D4D" }]}>Confirmation finale</Text>
+              <Text style={[styles.modalTitle, { color: "#FF4D4D" }]}>Final confirmation</Text>
               <Text style={styles.modalBody}>
-                Pour confirmer, tapez <Text style={{ fontWeight: "800", color: "#FF4D4D" }}>SUPPRIMER</Text> ci-dessous :
+                To confirm, type <Text style={{ fontWeight: "800", color: "#FF4D4D" }}>DELETE</Text> below:
               </Text>
               <TextInput
                 style={styles.deleteInput}
-                placeholder="SUPPRIMER"
+                placeholder="DELETE"
                 placeholderTextColor="#555"
                 value={deleteConfirmText}
                 onChangeText={setDeleteConfirmText}
@@ -629,18 +634,18 @@ export default function Profile() {
               <TouchableOpacity
                 style={[
                   styles.modalPrimaryBtn,
-                  { backgroundColor: deleteConfirmText.trim().toUpperCase() === "SUPPRIMER" ? "#FF4D4D" : "#333" },
+                  { backgroundColor: deleteConfirmText.trim().toUpperCase() === "DELETE" ? "#FF4D4D" : "#333" },
                 ]}
                 onPress={handleDeleteAccount}
-                disabled={deleteConfirmText.trim().toUpperCase() !== "SUPPRIMER" || deletingAccount}
+                disabled={deleteConfirmText.trim().toUpperCase() !== "DELETE" || deletingAccount}
               >
                 {deletingAccount
                   ? <ActivityIndicator color="#fff" />
-                  : <Text style={styles.modalPrimaryBtnText}>Supprimer définitivement</Text>
+                  : <Text style={styles.modalPrimaryBtnText}>Permanently delete</Text>
                 }
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalSecondaryBtn} onPress={() => setShowDeleteModal(false)}>
-                <Text style={styles.modalSecondaryBtnText}>Annuler</Text>
+                <Text style={styles.modalSecondaryBtnText}>Cancel</Text>
               </TouchableOpacity>
             </>
           )}

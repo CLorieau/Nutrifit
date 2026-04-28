@@ -63,8 +63,8 @@ export default function ActiveWorkout() {
           res.data.exercices.forEach((link, index) => {
             const exo = link.exercice;
             const seriesCount = link.series || 1;
-            const durationPerSeries = 30; // TODO back : exposer duree_serie dans l'API
-            const intraSeriesRest = 30;   // TODO back : exposer repos_intra_serie dans l'API
+            const durationPerSeries = link.duree_serie || 30;
+            const intraSeriesRest = link.repos_intra_serie || 30;
 
             for (let s = 1; s <= seriesCount; s++) {
               generatedSteps.push({

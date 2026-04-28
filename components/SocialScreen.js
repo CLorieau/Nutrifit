@@ -25,7 +25,7 @@ import {
 } from "../api/social";
 
 // ─── Onglets ──────────────────────────────────────────────────────────────────
-const TABS = ["Recherche", "Abonnements", "Abonnés"];
+const TABS = ["Search", "Following", "Followers"];
 
 // ─── Carte utilisateur ────────────────────────────────────────────────────────
 function UserCard({ user, onToggleFollow }) {
@@ -72,7 +72,7 @@ function UserCard({ user, onToggleFollow }) {
                 user.is_followed ? styles.followBtnTextActive : {},
               ]}
             >
-              {user.is_followed ? "Suivi ✓" : "Suivre"}
+              {user.is_followed ? "Following ✓" : "Follow"}
             </Text>
           )}
         </TouchableOpacity>
@@ -151,19 +151,19 @@ export default function SocialScreen() {
       );
       loadLists(); // rafraîchir les onglets
     } catch (e) {
-      Alert.alert("Erreur", "Impossible de mettre à jour le suivi.");
+      Alert.alert("Error", "Unable to update follow status.");
     }
   };
 
   // ── Unfollow depuis l'onglet Abonnements ─────────────────────────────────
   const handleUnfollow = async (user) => {
     Alert.alert(
-      "Ne plus suivre",
-      `Voulez-vous arrêter de suivre ${user.prenom || ""} ${user.nom} ?`,
+      "Unfollow",
+      `Do you want to stop following ${user.prenom || ""} ${user.nom}?`,
       [
-        { text: "Annuler", style: "cancel" },
+        { text: "Cancel", style: "cancel" },
         {
-          text: "Se désabonner",
+          text: "Unfollow",
           style: "destructive",
           onPress: async () => {
             try {
@@ -172,7 +172,7 @@ export default function SocialScreen() {
                 prev.filter((u) => u.id_utilisateur !== user.id_utilisateur)
               );
             } catch {
-              Alert.alert("Erreur", "Impossible de se désabonner.");
+              Alert.alert("Error", "Unable to unfollow.");
             }
           },
         },
@@ -187,7 +187,7 @@ export default function SocialScreen() {
         <Ionicons name="search-outline" size={18} color="#888" style={{ marginRight: 8 }} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Rechercher par nom…"
+          placeholder="Search by name..."
           placeholderTextColor="#888"
           value={searchQuery}
           onChangeText={handleSearch}
@@ -205,7 +205,7 @@ export default function SocialScreen() {
       )}
 
       {!searchLoading && searchQuery.length >= 2 && searchResults.length === 0 && (
-        <Text style={styles.emptyText}>Aucun utilisateur trouvé</Text>
+        <Text style={styles.emptyText}>No user found</Text>
       )}
 
       <FlatList
@@ -224,7 +224,7 @@ export default function SocialScreen() {
     if (listLoading)
       return <ActivityIndicator style={{ marginTop: 40 }} color="#A3FF3D" />;
     if (data.length === 0)
-      return <Text style={styles.emptyText}>Aucun utilisateur ici</Text>;
+      return <Text style={styles.emptyText}>No users here</Text>;
     return (
       <FlatList
         data={data}
@@ -245,7 +245,7 @@ export default function SocialScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       {/* Header */}
-      <Text style={styles.title}>Communauté</Text>
+      <Text style={styles.title}>Community</Text>
 
       {/* Tabs */}
       <View style={styles.tabs}>
