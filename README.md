@@ -94,12 +94,6 @@ NutriFit connects to a dedicated FastAPI backend that handles user authenticatio
 
 ---
 
-## 📱 Screenshots
-
-> *Coming soon — run the app locally to explore the interface.*
-
----
-
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -238,13 +232,6 @@ NutriFit is built with user wellbeing at its core:
 ## 🤝 Contributing
 
 This project is developed as part of an academic program (SAE — M1). Contributions from the core team are managed through the shared GitHub repository.
-
-**Branch naming convention:**
-```
-feat/feature-name
-fix/bug-description
-chore/task-name
-```
 
 **Commit convention:**
 ```
