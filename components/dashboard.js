@@ -20,12 +20,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AuthContext from "../AuthContext";
+import { useBlindMode } from "../BlindModeContext";
 
 export default function Dashboard({ navigation }) {
   const insets = useSafeAreaInsets();
   const { openChat } = useChat();
   const { isPlaying, play, pause, progress } = usePlayer();
   const { user } = useContext(AuthContext);
+  const { blindMode } = useBlindMode();
 
   const [todaysPlanning, setTodaysPlanning] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -314,10 +316,12 @@ export default function Dashboard({ navigation }) {
             <View style={styles.tcMetrics}>
               <View style={styles.tcMetricItem}>
                 <MaterialCommunityIcons name="fire" size={16} color="#FF6432" />
-                <Text style={styles.tcMetricValue}>
-                  {burnedCalories > 0 ? burnedCalories : 300}
-                </Text>
-                <Text style={styles.tcMetricLabel}>kcal</Text>
+                {!blindMode && (
+                  <Text style={styles.tcMetricValue}>
+                    {burnedCalories > 0 ? burnedCalories : 300}
+                  </Text>
+                )}
+                <Text style={styles.tcMetricLabel}>{blindMode ? "Workout" : "kcal"}</Text>
               </View>
               <View style={styles.tcMetricDivider} />
               <View style={styles.tcMetricItem}>
@@ -394,6 +398,7 @@ export default function Dashboard({ navigation }) {
       </View>
 
       {/* CARD 2 — GENERAL VIEW */}
+      {!blindMode && (
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>General View</Text>
 
@@ -482,6 +487,7 @@ export default function Dashboard({ navigation }) {
           )}
         </View>
       </View>
+      )}
 
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Meals of the day</Text>
@@ -530,9 +536,11 @@ export default function Dashboard({ navigation }) {
                       {meal.heure_debut || "—"}
                     </Text>
                   </View>
-                  <Text style={[styles.mealRowCal, { color }]}>
-                    {calories} kcal
-                  </Text>
+                  {!blindMode && (
+                    <Text style={[styles.mealRowCal, { color }]}>
+                      {calories} kcal
+                    </Text>
+                  )}
                   <Ionicons
                     name="chevron-forward"
                     size={16}

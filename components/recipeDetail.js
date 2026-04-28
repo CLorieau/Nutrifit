@@ -18,10 +18,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { addFavorites, deleteFavorites } from "../api/favoris";
 import { getFriends, shareRecipe } from "../api/social";
+import { useBlindMode } from "../BlindModeContext";
 
 export default function RecipeDetail({ route, navigation }) {
   const insets = useSafeAreaInsets();
   const { recipe, recipeId } = route.params || {};
+  const { blindMode } = useBlindMode();
 
   const [currentRecipe, setCurrentRecipe] = useState(recipe || null);
   const [loading, setLoading] = useState(!recipe && !!recipeId);
@@ -247,12 +249,16 @@ export default function RecipeDetail({ route, navigation }) {
             <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
               {currentRecipe.title || currentRecipe.nom_recette}
             </Text>
-            <Text style={{ color: "#E5E7EB", fontSize: 12 }}>
-              {currentRecipe.kcalPer100 || currentRecipe.calories} kcal per 100g
-            </Text>
-            <Text style={{ color: "#E5E7EB", fontSize: 12 }}>
-              20g protein | 5g fat | 10g carbs
-            </Text>
+            {!blindMode && (
+              <>
+                <Text style={{ color: "#E5E7EB", fontSize: 12 }}>
+                  {currentRecipe.kcalPer100 || currentRecipe.calories} kcal per 100g
+                </Text>
+                <Text style={{ color: "#E5E7EB", fontSize: 12 }}>
+                  20g protein | 5g fat | 10g carbs
+                </Text>
+              </>
+            )}
           </View>
         </View>
 

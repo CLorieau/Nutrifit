@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   FlatList,
   ScrollView,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -38,6 +39,10 @@ export default function Training() {
   const route = useRoute();
   const { openChat } = useChat();
   const { isPlaying, play, pause, progress, setTraining } = usePlayer();
+
+  // Fonctionnalité 4 : Disclaimer avant de démarrer la séance
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [pendingNavParams, setPendingNavParams] = useState(null);
 
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -219,18 +224,23 @@ export default function Training() {
 
   const openActiveWorkout = () => {
     if (!closestTraining) return;
-    if (closestTraining.id_seance) {
-      navigation.navigate("ActiveWorkout", {
-        seanceId: closestTraining.id_seance,
-      });
-    } else {
-      // S'il n'y a pas d'ID de séance mais juste un exercice,
-      // on peut faire un mock ou juste ne rien faire
-      navigation.navigate("ActiveWorkout", { seanceId: 0 }); // pass mock id
+    // Fonctionnalité 4 : intercepter et afficher le disclaimer avant de lancer
+    const params = closestTraining.id_seance
+      ? { seanceId: closestTraining.id_seance }
+      : { seanceId: 0 };
+    setPendingNavParams(params);
+    setShowDisclaimer(true);
+  };
+
+  const confirmStartWorkout = () => {
+    setShowDisclaimer(false);
+    if (pendingNavParams) {
+      navigation.navigate("ActiveWorkout", pendingNavParams);
     }
   };
 
   return (
+    <>
     <ScrollView
       style={styles.container}
       contentContainerStyle={{
@@ -410,6 +420,45 @@ export default function Training() {
         }
       />
     </ScrollView>
+
+    {/* Fonctionnalité 4 : Modale d'avertissement avant séance */}
+    <Modal visible={showDisclaimer} transparent animationType="slide">
+      <View style={styles.disclaimerOverlay}>
+        <View style={styles.disclaimerBox}>
+          <Text style={styles.disclaimerEmoji}>⚠️</Text>
+          <Text style={styles.disclaimerTitle}>Avant de commencer</Text>
+
+          <View style={styles.disclaimerItem}>
+            <Ionicons name="ear-outline" size={20} color="#A3FF3D" style={{ marginTop: 2 }} />
+            <Text style={styles.disclaimerText}>
+              Écoutez votre corps. Si vous ressentez une douleur anormale, arrêtez l’exercice immédiatement.
+            </Text>
+          </View>
+
+          <View style={styles.disclaimerItem}>
+            <Ionicons name="flame-outline" size={20} color="#A3FF3D" style={{ marginTop: 2 }} />
+            <Text style={styles.disclaimerText}>
+              N’oubliez pas de vous échauffer avant de commencer !
+            </Text>
+          </View>
+
+          <View style={styles.disclaimerItem}>
+            <Ionicons name="water-outline" size={20} color="#A3FF3D" style={{ marginTop: 2 }} />
+            <Text style={styles.disclaimerText}>
+              Hydratez-vous régulièrement pendant l’effort.
+            </Text>
+          </View>
+
+          <TouchableOpacity style={styles.disclaimerBtn} onPress={confirmStartWorkout} activeOpacity={0.85}>
+            <Text style={styles.disclaimerBtnText}>J’ai compris — Démarrer 💪</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.disclaimerCancel} onPress={() => setShowDisclaimer(false)}>
+            <Text style={styles.disclaimerCancelText}>Annuler</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+    </>
   );
 }
 
@@ -570,4 +619,66 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   tagText: { fontSize: 12, fontWeight: "600", color: "#000" },
+
+  // Fonctionnalité 4 : Disclaimer styles
+  disclaimerOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "flex-end",
+  },
+  disclaimerBox: {
+    backgroundColor: "#0A0A0A",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 28,
+    paddingBottom: 36,
+  },
+  disclaimerEmoji: {
+    fontSize: 40,
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  disclaimerTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#fff",
+    textAlign: "center",
+    marginBottom: 20,
+    letterSpacing: -0.3,
+  },
+  disclaimerItem: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 16,
+    alignItems: "flex-start",
+  },
+  disclaimerText: {
+    flex: 1,
+    color: "#9CA3AF",
+    fontSize: 14,
+    lineHeight: 21,
+    fontWeight: "500",
+  },
+  disclaimerBtn: {
+    backgroundColor: "#A3FF3D",
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginTop: 8,
+    marginBottom: 10,
+  },
+  disclaimerBtnText: {
+    color: "#000",
+    fontSize: 17,
+    fontWeight: "800",
+  },
+  disclaimerCancel: {
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  disclaimerCancelText: {
+    color: "#555",
+    fontSize: 15,
+    fontWeight: "600",
+  },
 });

@@ -31,6 +31,7 @@ import FriendProfileScreenView from "./screens/FriendProfileScreenView";
 import AuthContext from "./AuthContext";
 import { ChatProvider } from "./ChatContext";
 import { PlayerProvider } from "./PlayerContext";
+import { BlindModeProvider } from "./BlindModeContext";
 import ChatModal from "./components/ChatModal";
 import api from "./api/axiosInstance";
 
@@ -157,9 +158,10 @@ export default function App() {
 
   return (
     <AuthContext.Provider value={authContext}>
-      <SafeAreaProvider>
-        <ChatProvider>
-          <PlayerProvider>
+      <BlindModeProvider>
+        <SafeAreaProvider>
+          <ChatProvider>
+            <PlayerProvider>
             <NavigationContainer>
               <Stack.Navigator screenOptions={{ headerShown: false }}>
                 {!token ? (
@@ -217,10 +219,11 @@ export default function App() {
                 )}
               </Stack.Navigator>
             </NavigationContainer>
-            <ChatModal />
-          </PlayerProvider>
-        </ChatProvider>
-      </SafeAreaProvider>
+              <ChatModal />
+            </PlayerProvider>
+          </ChatProvider>
+        </SafeAreaProvider>
+      </BlindModeProvider>
     </AuthContext.Provider>
   );
 }

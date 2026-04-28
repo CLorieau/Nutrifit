@@ -9,6 +9,9 @@ import {
   ScrollView,
   FlatList,
   Image,
+  Modal,
+  Switch,
+  TextInput,
 } from "react-native";
 import { getProfile } from "../api/profileAPI";
 import { getSharedRecipes, getSocialStats } from "../api/social";
@@ -19,6 +22,7 @@ import AuthContext from "../AuthContext";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useChat } from "../ChatContext";
 import DonationModal from "./DonationModal";
+import { useBlindMode } from "../BlindModeContext";
 
 // ─── Palette identique aux autres écrans ───────────────────────────────────
 const BG = "#F7F7F9"; // fond général
@@ -32,9 +36,21 @@ export default function Profile() {
   const { signOut } = useContext(AuthContext);
   const navigation = useNavigation();
   const { openChat } = useChat();
+  const { blindMode, toggleBlindMode } = useBlindMode();
+
+  // Fonctionnalité 3 : Bouton Pause (mode expérimental statique)
+  const [showPauseModal, setShowPauseModal] = React.useState(false);
+  const [accountPaused, setAccountPaused] = React.useState(false);
+
+  // Fonctionnalité 5 : Suppression RGPD
+  const [showDeleteModal, setShowDeleteModal] = React.useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = React.useState("");
+  const [deleteStep, setDeleteStep] = React.useState(1); // 1=avertissement, 2=confirmation texte
+  const [deletingAccount, setDeletingAccount] = React.useState(false);
 
   const [loading, setLoading] = React.useState(true);
   const [friendsCount, setFriendsCount] = React.useState(0);
+  const [pendingRequestsCount, setPendingRequestsCount] = React.useState(0);
   const [sharedRecipes, setSharedRecipes] = React.useState([]);
   const [showDonation, setShowDonation] = React.useState(false);
   const [userData, setUserData] = React.useState({
@@ -69,9 +85,21 @@ export default function Profile() {
     }
   };
 
+  // Charge les demandes d'amis en attente (pour la pastille dynamique)
+  const fetchPendingRequests = async () => {
+    try {
+      const { getPendingRequests } = await import("../api/social");
+      const res = await getPendingRequests();
+      setPendingRequestsCount(res.data?.length || 0);
+    } catch (e) {
+      // Silencieux si l'endpoint n'existe pas encore
+    }
+  };
+
   useFocusEffect(
     React.useCallback(() => {
       fetchUserData();
+      fetchPendingRequests();
     }, []),
   );
 
@@ -98,6 +126,22 @@ export default function Profile() {
         onPress: () => signOut(),
       },
     ]);
+  };
+
+  // Fonctionnalité 5 : suppression du compte (MOCK — prêt pour DELETE /users/{id})
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText.trim().toUpperCase() !== "SUPPRIMER") return;
+    setDeletingAccount(true);
+    try {
+      // MOCK — remplacer par : await api.delete(`/users/${userData.id_utilisateur}`);
+      await new Promise((r) => setTimeout(r, 1200));
+      setShowDeleteModal(false);
+      await signOut();
+    } catch (e) {
+      Alert.alert("Erreur", "Impossible de supprimer le compte.");
+    } finally {
+      setDeletingAccount(false);
+    }
   };
 
   if (loading) {
@@ -147,7 +191,9 @@ export default function Profile() {
       id: "friends",
       icon: "people-outline",
       label: "My Friends",
-      badge: friendsCount > 0 ? String(friendsCount) : null,
+      // Pastille = demandes EN ATTENTE uniquement (cohérent avec la nav bar)
+      // Le nombre total d'amis (friendsCount) est affiché dans la section stats du profil
+      badge: pendingRequestsCount > 0 ? String(pendingRequestsCount) : null,
       danger: false,
       onPress: () => navigation.navigate("Community"),
     },
@@ -185,6 +231,10 @@ export default function Profile() {
       onPress: handleLogout,
     },
   ];
+
+  // Fonctionnalité 1 : item Mode Aveugle avec Switch intégré (rendu séparé, pas dans FlatList)
+  // Fonctionnalité 3 : item Pause avec badge "Expérimental"
+  // Ces deux items sont rendus dans une section Settings dédiée sous le menu principal.
 
   return (
     <>
@@ -419,24 +469,15 @@ export default function Profile() {
                     color={item.danger ? "#FF4D4D" : item.accent ? ACCENT : ACCENT}
                   />
                 </View>
-
-                <Text
-                  style={[
-                    styles.menuLabel,
-                    item.danger && styles.menuLabelDanger,
-                  ]}
-                >
+                <Text style={[styles.menuLabel, item.danger && styles.menuLabelDanger]}>
                   {item.label}
                 </Text>
-
                 <View style={{ flex: 1 }} />
-
                 {item.badge && (
                   <View style={styles.badge}>
                     <Text style={styles.badgeText}>{item.badge}</Text>
                   </View>
                 )}
-
                 <Ionicons
                   name="chevron-forward"
                   size={17}
@@ -444,11 +485,71 @@ export default function Profile() {
                   style={{ marginLeft: 6 }}
                 />
               </TouchableOpacity>
-
               {idx < menuItems.length - 1 && <View style={styles.menuSep} />}
             </React.Fragment>
           ))}
         </View>
+      </View>
+
+      {/* ─── BIEN-ÊTRE & ACCESSIBILITÉ ─── */}
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>Bien-être & Accessibilité</Text>
+        <View style={styles.menuCard}>
+
+          {/* Fonctionnalité 1 : Mode Aveugle */}
+          <View style={styles.menuItem}>
+            <View style={[styles.menuIconBox, { backgroundColor: "rgba(139,92,246,0.12)" }]}>
+              <Ionicons name="eye-off-outline" size={19} color="#8B5CF6" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.menuLabel}>Mode Aveugle</Text>
+              <Text style={styles.menuSublabel}>Masque calories & macros</Text>
+            </View>
+            <Switch
+              value={blindMode}
+              onValueChange={toggleBlindMode}
+              trackColor={{ false: "#2A2A2A", true: ACCENT }}
+              thumbColor={blindMode ? "#000" : "#555"}
+            />
+          </View>
+
+          <View style={styles.menuSep} />
+
+          {/* Fonctionnalité 3 : Bouton Pause */}
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => setShowPauseModal(true)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.menuIconBox, { backgroundColor: "rgba(251,191,36,0.12)" }]}>
+              <Ionicons name="pause-circle-outline" size={19} color="#FBBF24" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.menuLabel}>
+                {accountPaused ? "Compte en pause ⏸" : "Mettre en pause"}
+              </Text>
+              <Text style={styles.menuSublabel}>Pour vacances ou récupération</Text>
+            </View>
+            <View style={[styles.badge, { backgroundColor: "rgba(251,191,36,0.18)" }]}>
+              <Text style={[styles.badgeText, { color: "#FBBF24" }]}>Exp.</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={17} color="#C4C4C4" style={{ marginLeft: 6 }} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* ─── ZONE DE DANGER RGPD ─── */}
+      <View style={[styles.sectionContainer, { marginBottom: 30 }]}>
+        <Text style={[styles.sectionTitle, { color: "#FF4D4D" }]}>Zone de danger</Text>
+        <TouchableOpacity
+          style={styles.deleteBtn}
+          onPress={() => { setDeleteStep(1); setDeleteConfirmText(""); setShowDeleteModal(true); }}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="trash-outline" size={20} color="#fff" />
+          <Text style={styles.deleteBtnText}>Supprimer mon compte et mes données</Text>
+        </TouchableOpacity>
+        <Text style={styles.deleteHint}>Cette action est irréversible. Toutes vos données seront supprimées conformément au RGPD.</Text>
       </View>
     </ScrollView>
 
@@ -456,6 +557,96 @@ export default function Profile() {
       visible={showDonation}
       onClose={() => setShowDonation(false)}
     />
+
+    {/* ─── MODALE PAUSE (Fonctionnalité 3) ─── */}
+    <Modal visible={showPauseModal} transparent animationType="fade">
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalBox}>
+          <Text style={styles.modalEmoji}>⏸️</Text>
+          <Text style={styles.modalTitle}>Mettre le compte en pause</Text>
+          <Text style={styles.modalBody}>
+            Votre compte sera mis en pause. Vous ne perdrez pas votre place dans le classement et ne recevrez plus de notifications de rappel.{"\n\n"}Vous pouvez réactiver votre compte à tout moment.
+          </Text>
+          <View style={styles.modalBadgeRow}>
+            <View style={[styles.badge, { backgroundColor: "rgba(251,191,36,0.18)", paddingHorizontal: 12, paddingVertical: 5 }]}>
+              <Text style={[styles.badgeText, { color: "#FBBF24", fontSize: 13 }]}>🧪 Fonctionnalité expérimentale</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.modalPrimaryBtn}
+            onPress={() => {
+              setAccountPaused(!accountPaused);
+              setShowPauseModal(false);
+            }}
+          >
+            <Text style={styles.modalPrimaryBtnText}>
+              {accountPaused ? "Réactiver mon compte" : "Activer la pause"}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.modalSecondaryBtn} onPress={() => setShowPauseModal(false)}>
+            <Text style={styles.modalSecondaryBtnText}>Annuler</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+
+    {/* ─── MODALE SUPPRESSION RGPD (Fonctionnalité 5) ─── */}
+    <Modal visible={showDeleteModal} transparent animationType="fade">
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalBox}>
+          {deleteStep === 1 ? (
+            <>
+              <Text style={styles.modalEmoji}>⚠️</Text>
+              <Text style={[styles.modalTitle, { color: "#FF4D4D" }]}>Supprimer le compte</Text>
+              <Text style={styles.modalBody}>
+                Cette action est <Text style={{ fontWeight: "800" }}>irréversible</Text>. Toutes vos données (profil, repas, séances, recettes) seront définitivement supprimées conformément au RGPD (Art. 17).
+              </Text>
+              <TouchableOpacity
+                style={[styles.modalPrimaryBtn, { backgroundColor: "#FF4D4D" }]}
+                onPress={() => setDeleteStep(2)}
+              >
+                <Text style={styles.modalPrimaryBtnText}>Je comprends, continuer</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalSecondaryBtn} onPress={() => setShowDeleteModal(false)}>
+                <Text style={styles.modalSecondaryBtnText}>Annuler</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Text style={styles.modalEmoji}>🔐</Text>
+              <Text style={[styles.modalTitle, { color: "#FF4D4D" }]}>Confirmation finale</Text>
+              <Text style={styles.modalBody}>
+                Pour confirmer, tapez <Text style={{ fontWeight: "800", color: "#FF4D4D" }}>SUPPRIMER</Text> ci-dessous :
+              </Text>
+              <TextInput
+                style={styles.deleteInput}
+                placeholder="SUPPRIMER"
+                placeholderTextColor="#555"
+                value={deleteConfirmText}
+                onChangeText={setDeleteConfirmText}
+                autoCapitalize="characters"
+              />
+              <TouchableOpacity
+                style={[
+                  styles.modalPrimaryBtn,
+                  { backgroundColor: deleteConfirmText.trim().toUpperCase() === "SUPPRIMER" ? "#FF4D4D" : "#333" },
+                ]}
+                onPress={handleDeleteAccount}
+                disabled={deleteConfirmText.trim().toUpperCase() !== "SUPPRIMER" || deletingAccount}
+              >
+                {deletingAccount
+                  ? <ActivityIndicator color="#fff" />
+                  : <Text style={styles.modalPrimaryBtnText}>Supprimer définitivement</Text>
+                }
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalSecondaryBtn} onPress={() => setShowDeleteModal(false)}>
+                <Text style={styles.modalSecondaryBtnText}>Annuler</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      </View>
+    </Modal>
     </>
   );
 }
@@ -788,5 +979,109 @@ const styles = StyleSheet.create({
     color: "#000",
     fontSize: 12,
     fontWeight: "800",
+  },
+  menuSublabel: {
+    fontSize: 12,
+    color: TEXT_MUTED,
+    fontWeight: "400",
+    marginTop: 1,
+  },
+
+  // ─── ZONE DANGER ───
+  deleteBtn: {
+    backgroundColor: "#FF4D4D",
+    borderRadius: 16,
+    paddingVertical: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  deleteBtnText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  deleteHint: {
+    fontSize: 12,
+    color: TEXT_MUTED,
+    textAlign: "center",
+    marginTop: 10,
+    lineHeight: 18,
+  },
+
+  // ─── MODALES ───
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.65)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  modalBox: {
+    backgroundColor: "#1A1A1A",
+    borderRadius: 24,
+    padding: 28,
+    width: "100%",
+    alignItems: "center",
+  },
+  modalEmoji: {
+    fontSize: 44,
+    marginBottom: 14,
+  },
+  modalTitle: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "800",
+    letterSpacing: -0.3,
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  modalBody: {
+    color: TEXT_MUTED,
+    fontSize: 14,
+    lineHeight: 22,
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  modalBadgeRow: {
+    marginBottom: 20,
+  },
+  modalPrimaryBtn: {
+    backgroundColor: ACCENT,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    width: "100%",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  modalPrimaryBtnText: {
+    color: "#000",
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  modalSecondaryBtn: {
+    paddingVertical: 10,
+  },
+  modalSecondaryBtnText: {
+    color: TEXT_MUTED,
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  deleteInput: {
+    width: "100%",
+    backgroundColor: "#0A0A0A",
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#FF4D4D",
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    marginBottom: 18,
+    textAlign: "center",
+    letterSpacing: 2,
   },
 });

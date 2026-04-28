@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
+  Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -378,6 +379,26 @@ export default function Calendar({ initialDate = new Date(), onDateChange }) {
     );
   }
 
+  // ── Rest Day card ──
+  const STORAGE_KEY_REST = (dateStr) => `rest_validated_${dateStr}`;
+  const [restValidated, setRestValidated] = useState(false);
+  const offset2 = selected.getTimezoneOffset() * 60000;
+  const selectedDateStr = new Date(selected - offset2).toISOString().slice(0, 10);
+
+  useEffect(() => {
+    AsyncStorage.getItem(STORAGE_KEY_REST(selectedDateStr)).then((v) =>
+      setRestValidated(v === "true")
+    );
+  }, [selectedDateStr]);
+
+  const toggleRest = async () => {
+    const next = !restValidated;
+    setRestValidated(next);
+    await AsyncStorage.setItem(STORAGE_KEY_REST(selectedDateStr), next ? "true" : "false");
+  };
+
+  const hasWorkout = events.some((e) => e.type === "workout");
+
   return (
     <ScrollView
       style={styles.container}
@@ -444,15 +465,56 @@ export default function Calendar({ initialDate = new Date(), onDateChange }) {
         {loading ? (
           <ActivityIndicator size="large" color={ACCENT} style={{ marginTop: 50 }} />
         ) : events.length === 0 ? (
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIconBox}>
-              <Ionicons name="calendar-outline" size={30} color="#444" />
+          // Fonctionnalité 2 : Valorisation du repos — carte Repos quand aucune séance
+          <View style={{ marginTop: 20 }}>
+            <View style={styles.restCard}>
+              {/* Left accent bar */}
+              <View style={[styles.cardAccentBar, { backgroundColor: "#60A5FA", top: 12, bottom: 12 }]} />
+              <View style={[styles.cardIconBox, { backgroundColor: "rgba(96,165,250,0.15)", marginLeft: 6 }]}>
+                <Text style={{ fontSize: 22 }}>💤</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.restCardTitle}>Jour de Repos</Text>
+                <Text style={styles.restCardSub}>La récupération fait partie de l’entraînement !</Text>
+              </View>
+              {/* Checkbox validation repos */}
+              <TouchableOpacity
+                onPress={toggleRest}
+                style={[styles.checkbox, restValidated && styles.checkboxChecked]}
+              >
+                {restValidated && <Ionicons name="checkmark" size={14} color="#000" />}
+              </TouchableOpacity>
             </View>
-            <Text style={styles.emptyText}>No activity planned</Text>
-            <Text style={styles.emptySub}>Enjoy your free day!</Text>
+            {restValidated && (
+              <View style={styles.restValidatedBanner}>
+                <Text style={{ fontSize: 20 }}>🎉</Text>
+                <Text style={styles.restValidatedText}>Repos validé ! Votre corps vous remercie.</Text>
+              </View>
+            )}
           </View>
         ) : (
-          events.map((e, idx) => <Row key={idx} e={e} />)
+          <>
+            {events.map((e, idx) => <Row key={idx} e={e} />)}
+            {/* Fonctionnalité 2 : carte repos affichée même s'il y a des repas mais pas de sport */}
+            {!hasWorkout && (
+              <View style={styles.restCard}>
+                <View style={[styles.cardAccentBar, { backgroundColor: "#60A5FA", top: 12, bottom: 12 }]} />
+                <View style={[styles.cardIconBox, { backgroundColor: "rgba(96,165,250,0.15)", marginLeft: 6 }]}>
+                  <Text style={{ fontSize: 22 }}>💤</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.restCardTitle}>Pas de sport aujourd’hui</Text>
+                  <Text style={styles.restCardSub}>Validez votre repos actif 💪</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={toggleRest}
+                  style={[styles.checkbox, restValidated && styles.checkboxChecked]}
+                >
+                  {restValidated && <Ionicons name="checkmark" size={14} color="#000" />}
+                </TouchableOpacity>
+              </View>
+            )}
+          </>
         )}
       </View>
     </ScrollView>
@@ -704,5 +766,46 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#9CA3AF",
     fontWeight: "500",
+  },
+
+  // ─ Rest Card (Fonctionnalité 2) ─
+  restCard: {
+    backgroundColor: DARK,
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingRight: 16,
+    paddingLeft: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    overflow: "hidden",
+    marginBottom: 14,
+  },
+  restCardTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#fff",
+    marginBottom: 3,
+  },
+  restCardSub: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    fontWeight: "500",
+  },
+  restValidatedBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "rgba(96,165,250,0.12)",
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 14,
+  },
+  restValidatedText: {
+    color: "#60A5FA",
+    fontSize: 14,
+    fontWeight: "700",
+    flex: 1,
   },
 });

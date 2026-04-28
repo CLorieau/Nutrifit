@@ -27,7 +27,7 @@ import {
 } from "../api/social";
 
 const TABS = ["Mes Amis", "Demandes", "Rechercher"];
-const HAS_PENDING_REQUESTS_MOCK = true; // Permet de forcer l'affichage de la pastille
+// ⚠️ FIX : La pastille est maintenant pilotée par le vrai état `requests.length` (plus de mock statique)
 
 // ─── CARTE UTILISATEUR ────────────────────────────────────────────────────────
 function UserCard({ user, onAction, actionType, onCardPress }) {
@@ -202,7 +202,7 @@ export default function CommunityScreen() {
       <View style={styles.tabsContainer}>
         {TABS.map((tab, idx) => {
           const isDemandes = idx === 1;
-          const showBadge = isDemandes && HAS_PENDING_REQUESTS_MOCK;
+          const showBadge = isDemandes && requests.length > 0; // ✅ Dynamique : basé sur les vraies demandes
           
           return (
           <TouchableOpacity
